@@ -1,0 +1,183 @@
+/* =========================
+   🌐 GLOBAL THEME
+========================= */
+
+:root {
+  --primary: #2c7be5;
+  --primary-dark: #1f5fd1;
+  --secondary: #00c2a8;
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --text: #1f2d3d;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* =========================
+   🏠 APP LAYOUT
+========================= */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* =========================
+   🔝 NAVBAR
+========================= */
+
+.navbar {
+  height: 65px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  box-shadow: var(--shadow);
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* LINKS */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: 0.2s;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.active {
+  background: rgba(255,255,255,0.3);
+}
+
+
+
+/* =========================
+   📄 PAGE CONTENT
+========================= */
+
+.content {
+  flex: 1;
+  padding: 20px;
+}
+
+/* =========================
+   🧾 CARD SYSTEM
+========================= */
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+/* =========================
+   🔘 BUTTONS
+========================= */
+
+button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: var(--primary-dark);
+}
+
+/* =========================
+   🧑 FORMS
+========================= */
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+}
+
+/* =========================
+   🧑 DASHBOARD LAYOUT
+========================= */
+
+.dashboard-container {
+  display: flex;
+  height: calc(100vh - 65px);
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  background: white;
+  border-right: 1px solid #eee;
+  padding: 20px;
+}
+
+.sidebar a {
+  display: block;
+  padding: 10px;
+  margin: 5px 0;
+  text-decoration: none;
+  color: var(--text);
+  border-radius: 8px;
+}
+
+.sidebar a:hover {
+  background: #f0f4ff;
+}
+
+/* CONTENT AREA */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
+
+/* =========================
+   📱 RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+
+  .sidebar {
+    display: none;
+  }
+}

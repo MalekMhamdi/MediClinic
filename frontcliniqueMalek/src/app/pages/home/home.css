@@ -1,0 +1,318 @@
+/* ── Variables ─────────────────────────────────────────────── */
+:host {
+  --navy:   #0B2D5C;
+  --blue:   #1a4a8a;
+  --green:  #27AE60;
+  --light:  #f4f7fb;
+  --white:  #ffffff;
+  --gray:   #6b7a99;
+  --border: #e4eaf3;
+  display: block;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Navbar ────────────────────────────────────────────────── */
+.hm-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.hm-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.hm-logo { display: flex; align-items: center; gap: 10px; }
+.hm-logo-icon {
+  width: 38px; height: 38px;
+  background: var(--green);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 900; color: white;
+}
+.hm-logo-name { font-size: 17px; font-weight: 800; color: var(--navy); line-height: 1; }
+.hm-logo-tag  { font-size: 10px; color: var(--gray); letter-spacing: .5px; }
+
+.hm-nav-links { display: flex; gap: 28px; flex: 1; }
+.hm-nav-links a {
+  font-size: 14px; font-weight: 500; color: var(--gray);
+  text-decoration: none; cursor: pointer; transition: color .2s;
+}
+.hm-nav-links a:hover { color: var(--navy); }
+
+.hm-nav-actions { display: flex; gap: 10px; margin-left: auto; }
+
+.hm-btn-outline {
+  padding: 8px 20px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: transparent;
+  color: var(--navy); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.hm-btn-outline:hover { border-color: var(--navy); }
+
+.hm-btn-primary {
+  padding: 8px 20px; border-radius: 8px;
+  border: none; background: var(--green);
+  color: white; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .2s;
+}
+.hm-btn-primary:hover { background: #219a52; }
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.hm-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 90vh;
+  background: linear-gradient(135deg, var(--navy) 0%, #1a3a6e 60%, #0d4a6e 100%);
+  display: flex;
+  align-items: center;
+  padding: 80px 80px;
+  gap: 60px;
+}
+.hm-hero-bg { position: absolute; inset: 0; pointer-events: none; }
+.hm-hero-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+}
+.c1 { width: 500px; height: 500px; top: -150px; right: -100px; }
+.c2 { width: 300px; height: 300px; bottom: -80px; left: 200px; }
+.c3 { width: 200px; height: 200px; top: 40%; right: 35%; }
+
+.hm-hero-content {
+  flex: 1; max-width: 600px;
+  position: relative; z-index: 2;
+}
+.hm-hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(39,174,96,.15);
+  border: 1px solid rgba(39,174,96,.3);
+  color: #5ddb8e; font-size: 13px; font-weight: 600;
+  padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
+}
+.hm-hero-title {
+  font-size: 54px; font-weight: 900;
+  color: white; line-height: 1.1; margin-bottom: 20px;
+}
+.hm-hero-accent { color: var(--green); }
+.hm-hero-sub {
+  font-size: 17px; color: rgba(255,255,255,.7);
+  line-height: 1.7; margin-bottom: 36px; max-width: 480px;
+}
+.hm-hero-btns { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 48px; }
+
+.hm-btn-hero-primary {
+  padding: 14px 28px; border-radius: 10px;
+  background: var(--green); border: none;
+  color: white; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all .2s;
+}
+.hm-btn-hero-primary:hover { background: #219a52; transform: translateY(-1px); }
+
+.hm-btn-hero-outline {
+  padding: 14px 28px; border-radius: 10px;
+  background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(255,255,255,.25);
+  color: white; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.hm-btn-hero-outline:hover { background: rgba(255,255,255,.18); }
+
+.hm-hero-stats { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.hm-stat-num { font-size: 26px; font-weight: 800; color: white; }
+.hm-stat-lbl { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
+.hm-stat-sep { width: 1px; height: 36px; background: rgba(255,255,255,.15); }
+
+/* ── Hero Chat Card ────────────────────────────────────────── */
+.hm-hero-visual { position: relative; z-index: 2; flex-shrink: 0; }
+.hm-phone-card {
+  width: 340px; background: white; border-radius: 20px;
+  padding: 20px; box-shadow: 0 30px 80px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.hm-phone-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; color: var(--navy);
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.hm-phone-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; }
+.hm-phone-online { color: var(--green); font-size: 11px; margin-left: auto; }
+.hm-phone-msg {
+  padding: 10px 14px; border-radius: 12px;
+  font-size: 13px; line-height: 1.5; max-width: 85%;
+}
+.hm-phone-msg.ai  { background: var(--light); color: var(--navy); }
+.hm-phone-msg.user {
+  background: var(--navy); color: white;
+  align-self: flex-end; margin-left: auto;
+}
+.hm-phone-book {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--green); color: white;
+  font-size: 13px; font-weight: 700;
+  padding: 12px 16px; border-radius: 10px; margin-top: 4px;
+}
+
+/* ── Sections ──────────────────────────────────────────────── */
+.hm-section { padding: 90px 32px; }
+.hm-section-dark  { background: var(--navy); }
+.hm-section-light { background: var(--light); }
+.hm-section-inner { max-width: 1100px; margin: 0 auto; }
+
+.hm-section-label {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--green); margin-bottom: 12px;
+}
+.hm-section-label.light { color: #5ddb8e; }
+.hm-section-title {
+  font-size: 36px; font-weight: 800;
+  color: var(--navy); margin-bottom: 14px; line-height: 1.2;
+}
+.hm-section-title.light { color: white; }
+.hm-section-sub { font-size: 16px; color: var(--gray); margin-bottom: 52px; }
+
+/* ── Features ──────────────────────────────────────────────── */
+.hm-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+.hm-feature-card {
+  background: white; border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px;
+  transition: box-shadow .2s, transform .2s;
+}
+.hm-feature-card:hover {
+  box-shadow: 0 8px 32px rgba(11,45,92,.08);
+  transform: translateY(-3px);
+}
+.hm-feature-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 18px;
+}
+.hm-feature-card h3 { font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+.hm-feature-card p  { font-size: 14px; color: var(--gray); line-height: 1.6; }
+
+/* ── Steps ─────────────────────────────────────────────────── */
+.hm-steps { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.hm-step {
+  flex: 1; min-width: 220px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px; padding: 32px 24px; text-align: center;
+}
+.hm-step-num {
+  font-size: 48px; font-weight: 900;
+  color: rgba(255,255,255,.06); margin-bottom: -20px; line-height: 1;
+}
+.hm-step-icon { font-size: 36px; margin-bottom: 16px; }
+.hm-step h3 { font-size: 17px; font-weight: 700; color: white; margin-bottom: 10px; }
+.hm-step p  { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.6; }
+.hm-step-arrow { font-size: 28px; color: rgba(255,255,255,.2); flex-shrink: 0; }
+
+/* ── Specialties ───────────────────────────────────────────── */
+.hm-specs-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.hm-spec {
+  padding: 10px 18px;
+  background: white; border: 1px solid var(--border);
+  border-radius: 30px; font-size: 14px; font-weight: 500;
+  color: var(--navy); transition: all .2s; cursor: default;
+}
+.hm-spec:hover { background: var(--navy); color: white; border-color: var(--navy); }
+
+/* ── Portals ───────────────────────────────────────────────── */
+.hm-portals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+.hm-portal-card {
+  border-radius: 20px; padding: 30px 24px; color: white;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.hm-portal-card.patient { background: linear-gradient(135deg, #0B2D5C, #1a4a8a); }
+.hm-portal-card.doctor  { background: linear-gradient(135deg, #27AE60, #1e8449); }
+.hm-portal-card.lab     { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+.hm-portal-card.admin   { background: linear-gradient(135deg, #e67e22, #ca6f1e); }
+.hm-portal-icon { font-size: 36px; }
+.hm-portal-card h3 { font-size: 18px; font-weight: 800; }
+.hm-portal-card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.hm-portal-card ul li {
+  font-size: 13px; color: rgba(255,255,255,.8);
+  padding-left: 4px;
+}
+.hm-portal-card ul li::before { content: '✓  '; }
+.hm-portal-card button {
+  margin-top: auto; padding: 10px 0;
+  border: 1.5px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.12);
+  color: white; border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background .2s;
+}
+.hm-portal-card button:hover { background: rgba(255,255,255,.25); }
+
+/* ── CTA ───────────────────────────────────────────────────── */
+.hm-cta {
+  background: linear-gradient(135deg, var(--green), #1e8449);
+  padding: 80px 32px; text-align: center;
+}
+.hm-cta-inner { max-width: 600px; margin: 0 auto; }
+.hm-cta h2 { font-size: 34px; font-weight: 800; color: white; margin-bottom: 14px; }
+.hm-cta p  { font-size: 16px; color: rgba(255,255,255,.85); margin-bottom: 32px; }
+.hm-cta .hm-btn-hero-primary { background: white; color: var(--green); font-size: 16px; padding: 16px 36px; }
+.hm-cta .hm-btn-hero-primary:hover { background: #f0fff5; transform: none; }
+
+/* ── Footer ────────────────────────────────────────────────── */
+.hm-footer { background: var(--navy); padding: 60px 32px 0; }
+.hm-footer-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; gap: 60px; flex-wrap: wrap;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.hm-footer-brand { flex: 1.5; min-width: 200px; }
+.hm-footer-brand .hm-logo-name { color: white; }
+.hm-footer-brand p {
+  font-size: 13px; color: rgba(255,255,255,.45);
+  line-height: 1.7; margin-top: 16px; max-width: 280px;
+}
+.hm-footer-links { flex: 2; display: flex; gap: 40px; flex-wrap: wrap; }
+.hm-footer-col { display: flex; flex-direction: column; gap: 10px; min-width: 120px; }
+.hm-footer-col-title {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(255,255,255,.4); margin-bottom: 4px;
+}
+.hm-footer-col a {
+  font-size: 13px; color: rgba(255,255,255,.6);
+  text-decoration: none; cursor: pointer; transition: color .2s;
+}
+.hm-footer-col a:hover { color: white; }
+.hm-footer-bottom {
+  max-width: 1100px; margin: 0 auto;
+  padding: 20px 0; font-size: 12px;
+  color: rgba(255,255,255,.3); text-align: center;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hm-hero { flex-direction: column; text-align: center; padding: 60px 20px; }
+  .hm-hero-title { font-size: 36px; }
+  .hm-hero-btns { justify-content: center; }
+  .hm-hero-stats { justify-content: center; }
+  .hm-hero-visual { display: none; }
+  .hm-nav-links { display: none; }
+  .hm-section { padding: 60px 20px; }
+  .hm-step-arrow { display: none; }
+}

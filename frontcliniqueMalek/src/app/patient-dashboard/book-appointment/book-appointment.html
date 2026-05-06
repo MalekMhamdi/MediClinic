@@ -1,0 +1,272 @@
+<div class="bk-wrapper">
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="bk-header">
+    <div>
+      <h2 class="bk-title">Book an Appointment</h2>
+      <p class="bk-sub">
+        @if (step() === 1) { Step 1 of 3 — Select a specialty & doctor }
+        @else if (step() === 2) { Step 2 of 3 — Choose date & time }
+        @else { Step 3 of 3 — Review & confirm }
+      </p>
+    </div>
+    <div class="bk-steps">
+      <div class="bk-step" [class.active]="step() >= 1" [class.done]="step() > 1">
+        <div class="bk-step-circle">@if (step() > 1) { ✓ } @else { 1 }</div>
+        <span>Specialty</span>
+      </div>
+      <div class="bk-step-line" [class.active]="step() > 1"></div>
+      <div class="bk-step" [class.active]="step() >= 2" [class.done]="step() > 2">
+        <div class="bk-step-circle">@if (step() > 2) { ✓ } @else { 2 }</div>
+        <span>Schedule</span>
+      </div>
+      <div class="bk-step-line" [class.active]="step() > 2"></div>
+      <div class="bk-step" [class.active]="step() >= 3">
+        <div class="bk-step-circle">3</div>
+        <span>Confirm</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="bk-progress">
+    <div class="bk-progress-fill" [style.width]="progressWidth"></div>
+  </div>
+
+  <!-- ═══════════════════════════
+       STEP 1 — Specialty & Doctor
+  ═══════════════════════════ -->
+  @if (step() === 1) {
+    <div class="bk-body">
+
+      <!-- Specialties -->
+      <div class="bk-section-title">Select a specialty</div>
+      <div class="bk-specialties">
+        @for (sp of specialties; track sp.id) {
+          <div class="bk-sp-card"
+            [class.selected]="selectedSpecialty()?.id === sp.id"
+            (click)="selectSpecialty(sp)">
+            <div class="bk-sp-icon">{{ sp.icon }}</div>
+            <div class="bk-sp-name">{{ sp.name }}</div>
+            <div class="bk-sp-desc">{{ sp.description }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- Doctors -->
+      @if (selectedSpecialty()) {
+        <div class="bk-section-title" style="margin-top: 28px;">
+          Select a doctor
+          <span class="bk-section-badge">{{ filteredDoctors().length }} available</span>
+        </div>
+
+        @if (filteredDoctors().length === 0) {
+          <div class="bk-empty">No doctors available for this specialty.</div>
+        }
+
+        <div class="bk-doctors">
+          @for (doc of filteredDoctors(); track doc.id) {
+            <div class="bk-doc-card"
+              [class.selected]="selectedDoctor()?.id === doc.id"
+              (click)="selectDoctor(doc)">
+
+              <div class="bk-doc-avatar">{{ doc.avatar }}</div>
+
+              <div class="bk-doc-info">
+                <div class="bk-doc-name">{{ doc.name }}</div>
+                <div class="bk-doc-title">{{ doc.title }} · {{ doc.experience }}</div>
+                <div class="bk-doc-rating">
+                  <span class="bk-stars">★★★★★</span>
+                  <span class="bk-rating-val">{{ doc.rating }}</span>
+                  <span class="bk-reviews">({{ doc.reviews }} reviews)</span>
+                </div>
+                <div class="bk-doc-days">
+                  @for (day of doc.availableDays; track day) {
+                    <span class="bk-day-pill">{{ day }}</span>
+                  }
+                </div>
+              </div>
+
+              @if (selectedDoctor()?.id === doc.id) {
+                <div class="bk-selected-check">✓</div>
+              }
+
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+
+    <div class="bk-footer">
+      <div></div>
+      <button class="bk-btn-primary"
+        [disabled]="!selectedSpecialty() || !selectedDoctor()"
+        (click)="nextStep()">
+        Continue →
+      </button>
+    </div>
+  }
+
+  <!-- ═══════════════════════════
+       STEP 2 — Date & Time
+  ═══════════════════════════ -->
+  @if (step() === 2) {
+    <div class="bk-body">
+
+      <!-- Selected doctor summary -->
+      <div class="bk-summary-bar">
+        <div class="bk-sum-avatar">{{ selectedDoctor()?.avatar }}</div>
+        <div>
+          <div class="bk-sum-name">{{ selectedDoctor()?.name }}</div>
+          <div class="bk-sum-spec">{{ selectedSpecialty()?.name }} · {{ selectedDoctor()?.title }}</div>
+        </div>
+      </div>
+
+      <div class="bk-two-col">
+
+        <!-- Date -->
+        <div>
+          <div class="bk-section-title">Select a date</div>
+          <div class="bk-date-card">
+            <input
+              type="date"
+              class="bk-date-input"
+              [min]="minDate"
+              [value]="selectedDate()"
+              (input)="setDate($any($event.target).value)"
+            />
+            @if (selectedDate()) {
+              <div class="bk-date-display">
+                📅 {{ selectedDate() | date:'EEEE, MMMM d, y' }}
+              </div>
+            }
+          </div>
+
+          <!-- Available days -->
+          <div class="bk-avail-label">Doctor available on:</div>
+          <div class="bk-avail-days">
+            @for (day of selectedDoctor()!.availableDays; track day) {
+              <span class="bk-day-pill green">{{ day }}</span>
+            }
+          </div>
+        </div>
+
+        <!-- Time slots -->
+        <div>
+          <div class="bk-section-title">Select a time slot</div>
+          @if (!selectedDate()) {
+            <div class="bk-empty-small">Please select a date first</div>
+          } @else if (loadingSlots()) {
+            <div class="bk-empty-small">Loading available slots...</div>
+          } @else {
+            <div class="bk-slots">
+              @for (slot of timeSlots(); track slot.time) {
+                <div class="bk-slot"
+                  [class.available]="slot.available"
+                  [class.unavailable]="!slot.available"
+                  [class.selected]="selectedTime() === slot.time"
+                  (click)="setTime(slot)">
+                  {{ slot.time }}
+                  @if (!slot.available) { <span class="bk-booked">Booked</span> }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+
+      <!-- Reason -->
+      <div class="bk-section-title" style="margin-top: 24px;">Reason for visit <span class="bk-optional">(optional)</span></div>
+      <textarea
+        class="bk-textarea"
+        placeholder="Briefly describe your symptoms or reason for the appointment..."
+        rows="3"
+        (input)="setReason($any($event.target).value)"
+      >{{ reason() }}</textarea>
+
+    </div>
+
+    <div class="bk-footer">
+      <button class="bk-btn-back" (click)="prevStep()">← Back</button>
+      <button class="bk-btn-primary"
+        [disabled]="!canConfirm"
+        (click)="nextStep()">
+        Review Appointment →
+      </button>
+    </div>
+  }
+
+  <!-- ═══════════════════════════
+       STEP 3 — Review & Confirm
+  ═══════════════════════════ -->
+  @if (step() === 3) {
+    <div class="bk-body">
+
+      <div class="bk-confirm-card">
+        <div class="bk-confirm-title">Appointment Summary</div>
+
+        <div class="bk-confirm-doctor">
+          <div class="bk-doc-avatar large">{{ selectedDoctor()?.avatar }}</div>
+          <div>
+            <div class="bk-doc-name">{{ selectedDoctor()?.name }}</div>
+            <div class="bk-doc-title">{{ selectedDoctor()?.title }}</div>
+          </div>
+          <div class="bk-confirm-badge">{{ selectedSpecialty()?.name }}</div>
+        </div>
+
+        <div class="bk-confirm-rows">
+          <div class="bk-confirm-row">
+            <span class="bk-confirm-label">📅 Date</span>
+            <span class="bk-confirm-val">{{ selectedDate() | date:'EEEE, MMMM d, y' }}</span>
+          </div>
+          <div class="bk-confirm-row">
+            <span class="bk-confirm-label">🕐 Time</span>
+            <span class="bk-confirm-val">{{ selectedTime() }}</span>
+          </div>
+          <div class="bk-confirm-row">
+            <span class="bk-confirm-label">🩺 Specialty</span>
+            <span class="bk-confirm-val">{{ selectedSpecialty()?.name }}</span>
+          </div>
+          @if (reason()) {
+            <div class="bk-confirm-row">
+              <span class="bk-confirm-label">📝 Reason</span>
+              <span class="bk-confirm-val">{{ reason() }}</span>
+            </div>
+          }
+          <div class="bk-confirm-row">
+            <span class="bk-confirm-label">📍 Location</span>
+            <span class="bk-confirm-val">MediClinic — Main Building</span>
+          </div>
+        </div>
+
+        <div class="bk-confirm-note">
+          ℹ You will receive a confirmation notification once the appointment is validated.
+        </div>
+      </div>
+
+    </div>
+
+    @if (error()) {
+      <div class="bk-error">⚠ {{ error() }}</div>
+    }
+
+    @if (success()) {
+      <div class="bk-success-banner">
+        ✅ Appointment request sent! You will receive a confirmation notification soon.
+        <button class="bk-btn-primary" style="margin-top:12px" (click)="goToAppointments()">
+          View My Appointments
+        </button>
+      </div>
+    }
+
+    <div class="bk-footer">
+      <button class="bk-btn-back" (click)="prevStep()" [disabled]="loading() || success()">← Back</button>
+      <button class="bk-btn-confirm" (click)="confirm()" [disabled]="loading() || success()">
+        @if (loading()) { Booking... } @else { ✓ Confirm Appointment }
+      </button>
+    </div>
+  }
+
+</div>

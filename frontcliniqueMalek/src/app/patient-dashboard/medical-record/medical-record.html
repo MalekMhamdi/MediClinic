@@ -1,0 +1,161 @@
+@if (loading()) {
+  <div class="mr-section"><div class="mr-card" style="padding:20px;color:#888;">Loading medical record...</div></div>
+}
+
+@if (error() && !loading()) {
+  <div class="mr-section"><div class="mr-card" style="padding:20px;color:#c00;">⚠ {{ error() }}</div></div>
+}
+
+@if (!loading() && !error() && record()) {
+
+  <!-- Patient info banner -->
+  <div class="mr-section">
+    <div class="mr-card" style="padding:16px 20px;">
+      <div style="display:flex;gap:32px;flex-wrap:wrap;">
+        <span><strong>Name:</strong> {{ record()!.fullName }}</span>
+        <span><strong>CIN:</strong> {{ record()!.cin }}</span>
+        <span><strong>DOB:</strong> {{ formatDate(record()!.dateOfBirth) }}</span>
+        <span><strong>Blood:</strong> {{ record()!.bloodGroup ?? '—' }}</span>
+        <span><strong>Phone:</strong> {{ record()!.phone ?? '—' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="mr-section">
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="mr-tab-btn" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
+        📅 Appointments ({{ record()!.appointments.length }})
+      </button>
+      <button class="mr-tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
+        💊 Prescriptions ({{ allPrescriptions.length }})
+      </button>
+      <button class="mr-tab-btn" [class.active]="activeTab() === 'laborders'" (click)="setTab('laborders')">
+        🔬 Lab Orders ({{ allLabOrders.length }})
+      </button>
+    </div>
+  </div>
+
+  <!-- Appointments tab -->
+  @if (activeTab() === 'appointments') {
+    <div class="mr-section">
+      <div class="mr-section-title">
+        Appointment History
+        <div class="mr-line"></div>
+      </div>
+
+      @if (record()!.appointments.length === 0) {
+        <div class="mr-card" style="padding:20px;color:#888;">No appointments yet.</div>
+      }
+
+      @for (a of record()!.appointments; track a.id) {
+        <div class="mr-doc-item">
+          <div class="mr-doc-icon {{ a.status === 'Confirmed' || a.status === 'Completed' ? 'green' : 'amber' }}">
+            📅
+          </div>
+          <div class="mr-doc-info">
+            <div class="mr-doc-title">{{ a.doctorFullName }} — {{ a.doctorSpecialty }}</div>
+            <div class="mr-doc-meta">
+              {{ formatDate(a.dateTime) }}
+              @if (a.reason) { · {{ a.reason }} }
+              · <strong>{{ a.statusLabel }}</strong>
+              @if (a.hasConsultation) { · ✔ Consultation }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Prescriptions tab -->
+  @if (activeTab() === 'prescriptions') {
+    <div class="mr-section">
+      <div class="mr-section-title">
+        Prescriptions
+        <div class="mr-line"></div>
+      </div>
+
+      @if (allPrescriptions.length === 0) {
+        <div class="mr-card" style="padding:20px;color:#888;">No prescriptions found.</div>
+      } @else {
+        <div class="mr-card">
+          <table class="mr-table">
+            <thead>
+              <tr>
+                <th>Medication</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rx of allPrescriptions; track rx.id) {
+                <tr>
+                  <td>{{ rx.medication }}</td>
+                  <td>{{ rx.dosage }}</td>
+                  <td>{{ rx.frequency }}</td>
+                  <td>{{ rx.duration }}</td>
+                  <td>{{ rx.notes ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Lab Orders tab -->
+  @if (activeTab() === 'laborders') {
+    <div class="mr-section">
+      <div class="mr-section-title">
+        Laboratory Orders
+        <div class="mr-line"></div>
+      </div>
+
+      @if (allLabOrders.length === 0) {
+        <div class="mr-card" style="padding:20px;color:#888;">No lab orders found.</div>
+      } @else {
+        @for (lo of allLabOrders; track lo.id) {
+          <div class="mr-card" style="padding:18px 20px;margin-bottom:10px;">
+
+            <!-- Header row -->
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div class="mr-doc-icon {{ labStatusClass(lo.status) }}" style="flex-shrink:0">🔬</div>
+              <div style="flex:1">
+                <div class="mr-doc-title">{{ lo.analysisType }}</div>
+                @if (lo.notes) {
+                  <div class="mr-doc-meta">Doctor's note: {{ lo.notes }}</div>
+                }
+              </div>
+              <span class="mr-lab-badge {{ labStatusClass(lo.status) }}">
+                {{ lo.statusLabel || lo.status }}
+              </span>
+            </div>
+
+            <!-- Result section -->
+            @if (lo.result) {
+              <div class="mr-result-box">
+                <div class="mr-result-header">
+                  <span>📋 Lab Result</span>
+                  <span class="mr-result-tech">by {{ lo.result.technicienName }} · {{ formatDate(lo.result.createdAt) }}</span>
+                </div>
+                @if (lo.result.medicalComment) {
+                  <div class="mr-result-comment">{{ lo.result.medicalComment }}</div>
+                }
+                @if (lo.result.resultPdfPath) {
+                  <div class="mr-result-pdf">📎 <a [href]="lo.result.resultPdfPath" target="_blank">View PDF Report</a></div>
+                }
+              </div>
+            } @else if (lo.status === 'Pending' || lo.status === 'InProgress') {
+              <div class="mr-result-pending">⏳ Result not yet available — you will be notified when ready.</div>
+            }
+
+          </div>
+        }
+      }
+    </div>
+  }
+
+}

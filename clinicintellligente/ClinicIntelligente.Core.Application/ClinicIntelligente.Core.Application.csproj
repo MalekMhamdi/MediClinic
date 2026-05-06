@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+	<PropertyGroup>
+		<NuGetAuditMode>direct</NuGetAuditMode>
+	</PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClinicIntelligente.Core.Domain\ClinicIntelligente.Core.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="AutoMapper" Version="12.0.1" />
+	  <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+	  <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+	  <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,209 @@
+@if (loading()) {
+  <div class="prf-loading">Loading profile...</div>
+}
+
+@if (!loading()) {
+
+  @if (error()) {
+    <div class="prf-alert error">⚠ {{ error() }}</div>
+  }
+  @if (success()) {
+    <div class="prf-alert success">✔ {{ success() }}</div>
+  }
+
+  <!-- Header -->
+  <div class="prf-header">
+    <div class="prf-avatar">{{ initials }}</div>
+    <div>
+      <div class="prf-name">{{ fullName }}</div>
+      <div class="prf-sub">Patient · ID {{ profile().cin }}</div>
+    </div>
+    <div class="prf-header-actions">
+      @if (!editing()) {
+        <button class="prf-edit-btn" (click)="startEdit()">✎ Edit Profile</button>
+      } @else {
+        <button class="prf-cancel-btn" (click)="cancelEdit()" [disabled]="saving()">Cancel</button>
+        <button class="prf-save-btn" (click)="saveEdit()" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : '✔ Save Changes' }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="prf-grid">
+
+    <!-- ═══ Personal Information ═══ -->
+    <div class="prf-card">
+      <div class="prf-card-title">Personal Information</div>
+
+      @if (!editing()) {
+        <div class="prf-row">
+          <span class="prf-label">Full name</span>
+          <span class="prf-val">{{ fullName }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">Date of birth</span>
+          <span class="prf-val">{{ profile().dateOfBirth | date:'dd MMM yyyy' }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">Blood group</span>
+          <span class="prf-val prf-blood">{{ profile().bloodGroup || '—' }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">National ID (CIN)</span>
+          <span class="prf-val">{{ profile().cin }}</span>
+        </div>
+      } @else {
+        <div class="prf-field">
+          <label>First name *</label>
+          <input [(ngModel)]="draft.firstName" name="firstName" placeholder="First name" />
+        </div>
+        <div class="prf-field">
+          <label>Last name *</label>
+          <input [(ngModel)]="draft.lastName" name="lastName" placeholder="Last name" />
+        </div>
+        <div class="prf-field">
+          <label>Blood group</label>
+          <select [(ngModel)]="draft.bloodGroup" name="bloodGroup">
+            <option value="">—</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+      }
+    </div>
+
+    <!-- ═══ Contact Details ═══ -->
+    <div class="prf-card">
+      <div class="prf-card-title">Contact Details</div>
+
+      @if (!editing()) {
+        <div class="prf-row">
+          <span class="prf-label">Phone</span>
+          <span class="prf-val">{{ profile().phone || '—' }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">Email</span>
+          <span class="prf-val">{{ profile().email }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">Address</span>
+          <span class="prf-val">{{ profile().address || '—' }}</span>
+        </div>
+      } @else {
+        <div class="prf-field">
+          <label>Phone</label>
+          <input type="tel" [(ngModel)]="draft.phone" name="phone" placeholder="+216 XX XXX XXX" />
+        </div>
+        <div class="prf-field">
+          <label>Email</label>
+          <input [value]="draft.email" disabled />
+          <small style="color:#888;font-size:11px;">Email cannot be changed here.</small>
+        </div>
+        <div class="prf-field">
+          <label>Address</label>
+          <input [(ngModel)]="draft.address" name="address" placeholder="Street, City" />
+        </div>
+      }
+    </div>
+
+    <!-- ═══ Emergency Contact ═══ -->
+    <div class="prf-card">
+      <div class="prf-card-title">Emergency Contact</div>
+
+      @if (!editing()) {
+        <div class="prf-row">
+          <span class="prf-label">Full name</span>
+          <span class="prf-val">{{ profile().emergencyContactName || '—' }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">Relationship</span>
+          <span class="prf-val">{{ profile().emergencyContactRelation || '—' }}</span>
+        </div>
+        <div class="prf-row">
+          <span class="prf-label">Phone</span>
+          <span class="prf-val">{{ profile().emergencyContactPhone || '—' }}</span>
+        </div>
+        @if (!profile().emergencyContactName && !profile().emergencyContactRelation && !profile().emergencyContactPhone) {
+          <div style="color:#bbb;font-size:12px;padding:4px 18px 12px;font-style:italic;">
+            Click "Edit Profile" to add an emergency contact.
+          </div>
+        }
+      } @else {
+        <div class="prf-field">
+          <label>Full name</label>
+          <input
+            [(ngModel)]="draft.emergencyContactName"
+            name="emergencyContactName"
+            placeholder="e.g. Jane Doe" />
+        </div>
+        <div class="prf-field">
+          <label>Relationship</label>
+          <select [(ngModel)]="draft.emergencyContactRelation" name="emergencyContactRelation">
+            <option value="">Select...</option>
+            <option value="Spouse">Spouse</option>
+            <option value="Parent">Parent</option>
+            <option value="Child">Child</option>
+            <option value="Sibling">Sibling</option>
+            <option value="Friend">Friend</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="prf-field">
+          <label>Phone</label>
+          <input
+            type="tel"
+            [(ngModel)]="draft.emergencyContactPhone"
+            name="emergencyContactPhone"
+            placeholder="+216 XX XXX XXX" />
+        </div>
+      }
+    </div>
+
+    <!-- ═══ Account Security ═══ -->
+    <div class="prf-card">
+      <div class="prf-card-title">Account Security</div>
+
+      @if (pwdSuccess()) {
+        <div class="prf-alert success" style="margin:0 18px 12px;">✔ {{ pwdSuccess() }}</div>
+      }
+
+      <div class="prf-row">
+        <span class="prf-label">Password</span>
+        <span class="prf-val">••••••••</span>
+      </div>
+      <div class="prf-row" style="padding:12px 18px;">
+        <button class="prf-pwd-btn" (click)="togglePwdForm()">
+          {{ showPwdForm() ? 'Cancel' : 'Change Password' }}
+        </button>
+      </div>
+
+      @if (showPwdForm()) {
+        <div style="padding:0 18px 16px;display:flex;flex-direction:column;gap:10px;">
+          @if (pwdError()) {
+            <div class="prf-alert error">⚠ {{ pwdError() }}</div>
+          }
+          <div class="prf-field">
+            <label>Current password</label>
+            <input type="password" [(ngModel)]="currentPwd" name="currentPwd" />
+          </div>
+          <div class="prf-field">
+            <label>New password (min. 8 characters)</label>
+            <input type="password" [(ngModel)]="newPwd" name="newPwd" />
+          </div>
+          <div class="prf-field">
+            <label>Confirm new password</label>
+            <input type="password" [(ngModel)]="confirmPwd" name="confirmPwd" />
+          </div>
+          <button class="prf-save-btn" (click)="changePassword()" [disabled]="savingPwd()">
+            {{ savingPwd() ? 'Saving...' : 'Update Password' }}
+          </button>
+        </div>
+      }
+    </div>
+
+  </div>
+}

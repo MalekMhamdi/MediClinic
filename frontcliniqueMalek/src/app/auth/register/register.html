@@ -1,0 +1,333 @@
+<div class="auth-shell">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="auth-side">
+    <div class="auth-side-content">
+
+      <div class="auth-logo">
+        <div class="auth-logo-icon"><div class="auth-cross"></div></div>
+        <span class="auth-logo-text">MediClinic</span>
+      </div>
+
+      <h1 class="auth-side-title">
+        Join<br>MediClinic.
+      </h1>
+      <p class="auth-side-sub">
+        Create your patient account in minutes and access
+        all your healthcare services online.
+      </p>
+
+      <!-- Steps indicator -->
+      <div class="auth-steps">
+        <div class="auth-step" [class.active]="step() >= 1" [class.done]="step() > 1">
+          <div class="auth-step-circle">
+            @if (step() > 1) { ✓ } @else { 1 }
+          </div>
+          <div class="auth-step-label">Personal</div>
+        </div>
+        <div class="auth-step-line" [class.active]="step() > 1"></div>
+        <div class="auth-step" [class.active]="step() >= 2" [class.done]="step() > 2">
+          <div class="auth-step-circle">
+            @if (step() > 2) { ✓ } @else { 2 }
+          </div>
+          <div class="auth-step-label">Contact</div>
+        </div>
+        <div class="auth-step-line" [class.active]="step() > 2"></div>
+        <div class="auth-step" [class.active]="step() >= 3">
+          <div class="auth-step-circle">3</div>
+          <div class="auth-step-label">Security</div>
+        </div>
+      </div>
+
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="auth-feature-icon">🔐</div>
+          <div>Secure & confidential data</div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">📱</div>
+          <div>Access from any device</div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">⚡</div>
+          <div>Quick 3-step registration</div>
+        </div>
+      </div>
+    </div>
+    <div class="auth-side-decor"></div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="auth-form-side">
+    <div class="auth-form-card">
+
+      <div class="auth-form-header">
+        <h2 class="auth-form-title">
+          @if (step() === 1) { Create an account }
+          @else if (step() === 2) { Address & Emergency contact }
+          @else { Secure your account }
+        </h2>
+        <p class="auth-form-sub">
+          @if (step() === 1) { Step 1 of 3 — Your personal information }
+          @else if (step() === 2) { Step 2 of 3 — Address & emergency contact }
+          @else { Step 3 of 3 — Choose a strong password }
+        </p>
+        <div class="auth-progress-bar">
+          <div class="auth-progress-fill" [style.width]="progressWidth"></div>
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="auth-error">⚠ {{ error() }}</div>
+      }
+
+      <!-- ════════════════
+           STEP 1 — Personal info
+      ════════════════ -->
+      @if (step() === 1) {
+
+        <div class="auth-row">
+          <div class="auth-field">
+            <label class="auth-label">First name</label>
+            <div class="auth-input-wrap">
+              <span class="auth-input-icon">👤</span>
+              <input type="text" class="auth-input" placeholder="John"
+                [value]="firstName()" (input)="firstName.set($any($event.target).value)" />
+            </div>
+          </div>
+          <div class="auth-field">
+            <label class="auth-label">Last name</label>
+            <div class="auth-input-wrap">
+              <span class="auth-input-icon">👤</span>
+              <input type="text" class="auth-input" placeholder="Doe"
+                [value]="lastName()" (input)="lastName.set($any($event.target).value)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">Email address</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">✉</span>
+            <input type="email" class="auth-input" placeholder="you@example.com"
+              [value]="email()" (input)="email.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">Phone number</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">📞</span>
+            <input type="tel" class="auth-input" placeholder="+1 (555) 000-0000"
+              [value]="phone()" (input)="phone.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">CIN (National ID)</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">🪪</span>
+            <input type="text" class="auth-input" placeholder="ex: 12345678"
+              [value]="cin()" (input)="cin.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">Date of birth</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">📅</span>
+            <input type="date" class="auth-input"
+              [value]="birthDate()" (input)="birthDate.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-row">
+          <div class="auth-field">
+            <label class="auth-label">Gender</label>
+            <div class="auth-input-wrap">
+              <span class="auth-input-icon">⚧</span>
+              <select class="auth-input auth-select"
+                [value]="gender()" (change)="gender.set($any($event.target).value)">
+                <option value="" disabled selected>Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label">Blood group</label>
+            <div class="auth-input-wrap">
+              <span class="auth-input-icon">🩸</span>
+              <select class="auth-input auth-select"
+                [value]="bloodGroup()" (change)="bloodGroup.set($any($event.target).value)">
+                <option value="" disabled selected>Select type</option>
+                <option value="A+">A+</option>
+                <option value="A-">A−</option>
+                <option value="B+">B+</option>
+                <option value="B-">B−</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB−</option>
+                <option value="O+">O+</option>
+                <option value="O-">O−</option>
+                <option value="Unknown">Unknown</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button class="auth-submit" (click)="nextStep()">Continue →</button>
+      }
+
+      <!-- ════════════════
+           STEP 2 — Address & Emergency contact
+      ════════════════ -->
+      @if (step() === 2) {
+
+        <div class="auth-section-label">Address</div>
+
+        <div class="auth-field">
+          <label class="auth-label">Street address</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">📍</span>
+            <input type="text" class="auth-input" placeholder="123 Main Street"
+              [value]="address()" (input)="address.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">City</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">🏙</span>
+            <input type="text" class="auth-input" placeholder="New York"
+              [value]="city()" (input)="city.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-section-label">Emergency contact</div>
+
+        <div class="auth-field">
+          <label class="auth-label">Full name</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">👤</span>
+            <input type="text" class="auth-input" placeholder="Jane Doe"
+              [value]="emergencyName()" (input)="emergencyName.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="auth-row">
+          <div class="auth-field">
+            <label class="auth-label">Relationship</label>
+            <div class="auth-input-wrap">
+              <span class="auth-input-icon">🤝</span>
+              <select class="auth-input auth-select"
+                [value]="emergencyRelation()" (change)="emergencyRelation.set($any($event.target).value)">
+                <option value="" disabled selected>Select</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Parent">Parent</option>
+                <option value="Child">Child</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Friend">Friend</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label">Phone number</label>
+            <div class="auth-input-wrap">
+              <span class="auth-input-icon">📞</span>
+              <input type="tel" class="auth-input" placeholder="+1 (555) 000-0000"
+                [value]="emergencyPhone()" (input)="emergencyPhone.set($any($event.target).value)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="auth-btn-row">
+          <button class="auth-back-btn" (click)="prevStep()">← Back</button>
+          <button class="auth-submit auth-submit-flex" (click)="nextStep()">Continue →</button>
+        </div>
+      }
+
+      <!-- ════════════════
+           STEP 3 — Security
+      ════════════════ -->
+      @if (step() === 3) {
+
+        <div class="auth-field">
+          <label class="auth-label">Password</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">🔒</span>
+            <input [type]="showPwd() ? 'text' : 'password'" class="auth-input"
+              placeholder="Minimum 8 characters"
+              [value]="password()" (input)="password.set($any($event.target).value)" />
+            <button class="auth-eye-btn" type="button" (click)="togglePwd()">
+              {{ showPwd() ? '🙈' : '👁' }}
+            </button>
+          </div>
+
+          @if (password()) {
+            <div class="auth-pwd-strength">
+              <div class="auth-pwd-bars">
+                @for (i of [1,2,3,4]; track i) {
+                  <div class="auth-pwd-bar"
+                    [class.filled]="pwdStrength >= i"
+                    [class]="pwdStrength >= i ? pwdStrengthClass : ''">
+                  </div>
+                }
+              </div>
+              <span class="auth-pwd-label {{ pwdStrengthClass }}">{{ pwdStrengthLabel }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">Confirm password</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">🔒</span>
+            <input [type]="showConf() ? 'text' : 'password'" class="auth-input"
+              placeholder="Repeat your password"
+              [value]="confirm()" (input)="confirm.set($any($event.target).value)" />
+            <button class="auth-eye-btn" type="button" (click)="toggleConf()">
+              {{ showConf() ? '🙈' : '👁' }}
+            </button>
+          </div>
+          @if (confirm() && password() !== confirm()) {
+            <div class="auth-field-error">Passwords do not match</div>
+          }
+        </div>
+
+        <div class="auth-terms">
+          <input type="checkbox" id="terms" />
+          <label for="terms">
+            I agree to the <a href="#" class="auth-switch-link">Terms of Service</a>
+            and <a href="#" class="auth-switch-link">Privacy Policy</a>
+          </label>
+        </div>
+
+        <div class="auth-btn-row">
+          <button class="auth-back-btn" (click)="prevStep()">← Back</button>
+          <button class="auth-submit auth-submit-flex"
+            [class.loading]="loading()"
+            [disabled]="loading()"
+            (click)="submit()">
+            @if (loading()) {
+              <span class="auth-spinner"></span> Creating account...
+            } @else {
+              Create account ✓
+            }
+          </button>
+        </div>
+      }
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <p class="auth-switch">
+        Already have an account?
+        <a routerLink="/login" class="auth-switch-link">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ClinicIntelligente.Core.Application/ClinicIntelligente.Core.Application.csproj" />
+  <Project Path="ClinicIntelligente.Core.Domain/ClinicIntelligente.Core.Domain.csproj" />
+  <Project Path="ClinicIntelligente.Infrastructure.Persistence/ClinicIntelligente.Infrastructure.Persistence.csproj" />
+  <Project Path="ClinicIntelligente.WebApi/ClinicIntelligente.WebApi.csproj" />
+</Solution>

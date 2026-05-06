@@ -1,0 +1,6 @@
+@ClinicIntelligente.WebApi_HostAddress = http://localhost:5034
+
+GET {{ClinicIntelligente.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
