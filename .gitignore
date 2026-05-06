@@ -1,0 +1,29 @@
+# ── .NET ─────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.db
+*.mdf
+*.ldf
+appsettings.Development.json
+
+# ── Angular ──────────────────────────────────────────────────────
+node_modules/
+dist/
+.angular/
+*.js.map
+
+# ── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.egg-info/
+
+# ── General ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

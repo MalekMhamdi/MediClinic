@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 18904 /F)",
+      "PowerShell(Stop-Process -Id 18904 -Force)"
+    ]
+  }
+}

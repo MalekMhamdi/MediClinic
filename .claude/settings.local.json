@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5217/swagger/v1/swagger.json)",
+      "Bash(sqllocaldb info *)",
+      "Bash(sqllocaldb start *)",
+      "Bash(dotnet ef *)",
+      "Bash(dotnet tool *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5034/swagger/v1/swagger.json)"
+    ]
+  }
+}

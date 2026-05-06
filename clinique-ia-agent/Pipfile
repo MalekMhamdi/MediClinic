@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = ">=0.110.0"
+uvicorn = {extras = ["standard"], version = ">=0.27.0"}
+langchain = ">=0.2.0"
+langchain-core = ">=0.2.0"
+langchain-groq = ">=0.1.9"
+pydantic = ">=2.0.0"
+python-dotenv = ">=1.0.0"
+python-multipart = ">=0.0.9"
+# langchain-openai = ">=0.1.0"  # décommenter si passage à OpenAI
+
+[dev-packages]
+black = "*"
+pytest = "*"
+httpx = "*"    # Pour tester les endpoints FastAPI
+
+[requires]
+python_version = "3.11"
