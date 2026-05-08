@@ -1,0 +1,80 @@
+<div class="pd-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="pd-sidebar">
+
+    <div class="pd-logo">
+      <div class="pd-logo-icon"><div class="pd-cross"></div></div>
+      <div>
+        <div class="pd-logo-text">MediClinic</div>
+        <div class="pd-logo-sub">My Medical Space</div>
+      </div>
+    </div>
+
+    <div class="pd-user-card">
+      <div class="pd-avatar">{{ initials }}</div>
+      <div>
+        <div class="pd-user-name">{{ patient()?.name }}</div>
+        <div class="pd-user-role">Patient · #{{ userId() }}</div>
+      </div>
+    </div>
+
+    <div class="pd-nav">
+      <div class="pd-nav-section">Navigation</div>
+
+      <a class="pd-nav-item" routerLink="profile"          routerLinkActive="active">
+        <span class="pd-nav-icon">◉</span> My Profile
+      </a>
+      <a class="pd-nav-item" routerLink="appointments"     routerLinkActive="active">
+        <span class="pd-nav-icon">◷</span> My Appointments
+      </a>
+      <a class="pd-nav-item" routerLink="medical-record"   routerLinkActive="active">
+        <span class="pd-nav-icon">◻</span> Medical Record
+      </a>
+      <a class="pd-nav-item" routerLink="notifications"    routerLinkActive="active">
+        <span class="pd-nav-icon">◎</span> Notifications
+        @if (unreadCount() > 0) {
+          <span class="pd-badge">{{ unreadCount() }}</span>
+        }
+      </a>
+
+      <div class="pd-nav-section" style="margin-top:8px">AI Services</div>
+
+      <a class="pd-nav-item pd-ai-link" routerLink="ai-agent" routerLinkActive="active">
+        <span class="pd-nav-icon">🧠</span> AI Orientation
+        <span class="pd-nav-tag">NEW</span>
+      </a>
+    </div>
+
+    <div class="pd-sidebar-footer">
+      <div class="pd-logout" (click)="logout()">
+        <span>→</span> Sign Out
+      </div>
+    </div>
+
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="pd-main">
+    <div class="pd-topbar">
+      <div>
+        <div class="pd-topbar-title">My Medical Space</div>
+        <div class="pd-topbar-sub">{{ today }}</div>
+      </div>
+      <a class="pd-notif-btn" routerLink="notifications">
+        🔔
+        @if (unreadCount() > 0) {
+          <div class="pd-notif-dot"></div>
+        }
+      </a>
+    </div>
+
+    <div class="pd-content">
+      <router-outlet />
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Chat flottant SignalR ───────────────────────────── -->
+<app-chat-popup />

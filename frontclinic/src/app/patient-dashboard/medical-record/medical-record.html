@@ -1,0 +1,257 @@
+@if (loading()) {
+  <div class="mr-loading">
+    <div class="mr-spinner"></div>
+    <span>Loading medical record...</span>
+  </div>
+}
+
+@if (error() && !loading()) {
+  <div class="mr-error">⚠ {{ error() }}</div>
+}
+
+@if (!loading() && !error() && record()) {
+<div class="mr-doc-wrapper">
+
+  <!-- ══ DOCUMENT HEADER ══════════════════════════════════════ -->
+  <div class="mr-doc-header">
+    <div class="mr-doc-header-top">
+      <div class="mr-brand">
+        <div class="mr-brand-cross">+</div>
+        <div>
+          <div class="mr-brand-name">MediClinic</div>
+          <div class="mr-brand-sub">Accredited Medical Center</div>
+        </div>
+      </div>
+      <div class="mr-doc-title-block">
+        <div class="mr-doc-title">PATIENT MEDICAL RECORD</div>
+        <div class="mr-doc-ref">Ref. EMR-{{ record()!.patientId | number:'4.0-0' }}</div>
+        <div class="mr-doc-generated">Generated on {{ today() }}</div>
+      </div>
+      <button class="mr-print-btn no-print" (click)="print()">🖨 Print / PDF</button>
+    </div>
+
+    <!-- Patient identity -->
+    <div class="mr-patient-id-bar">
+      <div class="mr-patient-avatar-lg">
+        {{ record()!.fullName.charAt(0) }}{{ (record()!.fullName.split(' ')[1] || '').charAt(0) }}
+      </div>
+      <div class="mr-patient-identity">
+        <div class="mr-patient-fullname">{{ record()!.fullName | uppercase }}</div>
+        <div class="mr-patient-chips">
+          <span class="mr-chip"><span class="mr-chip-lbl">ID</span>{{ record()!.cin || '—' }}</span>
+          <span class="mr-chip"><span class="mr-chip-lbl">DOB</span>{{ formatDate(record()!.dateOfBirth) }}</span>
+          <span class="mr-chip blood"><span class="mr-chip-lbl">Blood</span>{{ record()!.bloodGroup || '—' }}</span>
+          <span class="mr-chip"><span class="mr-chip-lbl">Phone</span>{{ record()!.phone || '—' }}</span>
+        </div>
+      </div>
+      <div class="mr-kpis">
+        <div class="mr-kpi"><span class="mr-kpi-n">{{ totalConsultations }}</span><span class="mr-kpi-l">Consultations</span></div>
+        <div class="mr-kpi"><span class="mr-kpi-n">{{ totalPrescriptions }}</span><span class="mr-kpi-l">Prescriptions</span></div>
+        <div class="mr-kpi"><span class="mr-kpi-n">{{ totalLabResults }}/{{ totalLabOrders }}</span><span class="mr-kpi-l">Lab Results</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EMPTY STATE ══════════════════════════════════════════ -->
+  @if (groupedByDoctor.length === 0) {
+    <div class="mr-empty-state">
+      <div class="mr-empty-icon">📋</div>
+      <div>No consultations recorded yet.</div>
+      <small>Your consultations, prescriptions and lab results will appear here after your doctor completes a visit.</small>
+    </div>
+  }
+
+  <!-- ══ GROUPED BY DOCTOR ════════════════════════════════════ -->
+  @for (group of groupedByDoctor; track group.doctorName) {
+
+    <div class="mr-doctor-section">
+
+      <div class="mr-doctor-header">
+        <div class="mr-doctor-avatar">
+          {{ group.doctorName.charAt(0) }}{{ (group.doctorName.split(' ')[1] || '').charAt(0) }}
+        </div>
+        <div class="mr-doctor-info">
+          <div class="mr-doctor-name">Dr. {{ group.doctorName }}</div>
+          <div class="mr-doctor-spec">{{ group.specialty }}</div>
+        </div>
+        <div class="mr-doctor-stats-pills">
+          <span class="mr-dpill">{{ group.consultations.length }} consultation(s)</span>
+          <span class="mr-dpill green">{{ countGroupPrescriptions(group.consultations) }} prescription(s)</span>
+          <span class="mr-dpill purple">{{ countGroupLabOrders(group.consultations) }} lab test(s)</span>
+        </div>
+      </div>
+
+      @for (entry of group.consultations; track entry.consultation.id; let ci = $index) {
+
+        <div class="mr-consult-card">
+
+          <!-- Date / title bar -->
+          <div class="mr-consult-date-bar">
+            <div class="mr-visit-date-badge">
+              <div class="mr-visit-day">{{ entry.appointmentDate | date:'dd' }}</div>
+              <div class="mr-visit-mon">{{ entry.appointmentDate | date:'MMM yyyy' }}</div>
+            </div>
+            <div class="mr-consult-title-block">
+              <div class="mr-consult-title">Consultation #{{ ci + 1 }}</div>
+              <div class="mr-consult-meta">{{ formatDateTime(entry.appointmentDate) }}</div>
+              @if (entry.appointmentReason) {
+                <div class="mr-consult-reason">Reason: {{ entry.appointmentReason }}</div>
+              }
+            </div>
+            <span class="mr-consult-done-badge">✔ Consultation</span>
+          </div>
+
+          <!-- Clinical Notes -->
+          @if (entry.consultation.diagnostic || entry.consultation.observations || entry.consultation.treatment) {
+            <div class="mr-clinical-notes">
+              <div class="mr-notes-title">📋 Clinical Report</div>
+              <div class="mr-notes-grid">
+                @if (entry.consultation.diagnostic) {
+                  <div class="mr-notes-block">
+                    <div class="mr-notes-label">DIAGNOSIS</div>
+                    <div class="mr-notes-text">{{ entry.consultation.diagnostic }}</div>
+                  </div>
+                }
+                @if (entry.consultation.observations) {
+                  <div class="mr-notes-block">
+                    <div class="mr-notes-label">CLINICAL OBSERVATIONS</div>
+                    <div class="mr-notes-text">{{ entry.consultation.observations }}</div>
+                  </div>
+                }
+                @if (entry.consultation.treatment) {
+                  <div class="mr-notes-block">
+                    <div class="mr-notes-label">TREATMENT PLAN</div>
+                    <div class="mr-notes-text">{{ entry.consultation.treatment }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- ── PRESCRIPTION — Rx document format ─────────── -->
+          @if (entry.consultation.prescriptions.length > 0) {
+            <div class="mr-rx-doc">
+              <div class="mr-rx-doc-header">
+                <div class="mr-rx-doc-left">
+                  <div class="mr-rx-doc-clinic">MediClinic</div>
+                  <div class="mr-rx-doc-doctor">Dr. {{ group.doctorName }} · {{ group.specialty }}</div>
+                  <div class="mr-rx-doc-date">{{ formatDate(entry.appointmentDate) }}</div>
+                </div>
+                <div class="mr-rx-stamp-big">Rx</div>
+              </div>
+              <div class="mr-rx-doc-patient">
+                Patient: <strong>{{ record()!.fullName }}</strong>
+                &nbsp;·&nbsp; DOB: {{ formatDate(record()!.dateOfBirth) }}
+                &nbsp;·&nbsp; Blood type: {{ record()!.bloodGroup || 'N/A' }}
+              </div>
+              <div class="mr-rx-doc-body">
+                @for (rx of entry.consultation.prescriptions; track rx.id; let ri = $index) {
+                  <div class="mr-rx-line">
+                    <span class="mr-rx-num">{{ ri + 1 }}.</span>
+                    <div class="mr-rx-content">
+                      <span class="mr-rx-name">{{ rx.medication }}</span>
+                      @if (rx.dosage) { <span class="mr-rx-dosage">{{ rx.dosage }}</span> }
+                      @if (rx.duration) { <span class="mr-rx-freq">— for {{ rx.duration }}</span> }
+                      @if (rx.instructions) {
+                        <div class="mr-rx-note-line">⚠ {{ rx.instructions }}</div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="mr-rx-doc-footer">
+                <div class="mr-rx-sig-line">
+                  <span>Doctor's signature &amp; stamp</span>
+                  <div class="mr-rx-sig-box"></div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- ── LAB RESULTS ────────────────────────────────── -->
+          @if (entry.consultation.labOrders.length > 0) {
+            <div class="mr-lab-section">
+              <div class="mr-lab-section-title">
+                🔬 Lab Tests
+                <span class="mr-lab-count">
+                  {{ entry.consultation.labOrders.length }} ordered · {{ countResults(entry.consultation.labOrders) }} result(s) available
+                </span>
+              </div>
+
+              @for (lo of entry.consultation.labOrders; track lo.id) {
+                <div class="mr-lab-item" [class.has-result]="lo.result !== null">
+
+                  <div class="mr-lab-item-header">
+                    <div class="mr-lab-item-left">
+                      <div class="mr-lab-status-dot" [class.done]="lo.result !== null"></div>
+                      <div>
+                        <div class="mr-lab-item-name">{{ lo.analysisType }}</div>
+                        @if (lo.notes) {
+                          <div class="mr-lab-item-note">Note: {{ lo.notes }}</div>
+                        }
+                      </div>
+                    </div>
+                    @if (lo.result !== null) {
+                      <span class="mr-lab-badge done">✔ Result available</span>
+                    } @else {
+                      <span class="mr-lab-badge pending">⏳ Pending</span>
+                    }
+                  </div>
+
+                  @if (lo.result !== null) {
+                    <div class="mr-lab-report">
+                      <div class="mr-lab-report-header">
+                        <div class="mr-lab-report-title-block">
+                          <div class="mr-lab-report-title">LABORATORY REPORT</div>
+                          <div class="mr-lab-report-type">{{ lo.analysisType }}</div>
+                        </div>
+                        <div class="mr-lab-report-meta">
+                          <div class="mr-lab-report-tech">Technician: <strong>{{ lo.result.technicienName }}</strong></div>
+                          <div class="mr-lab-report-date">{{ formatDate(lo.result.createdAt) }}</div>
+                          <div class="mr-lab-report-patient">Patient: {{ record()!.fullName }}</div>
+                        </div>
+                      </div>
+                      <div class="mr-lab-report-divider"></div>
+                      @if (lo.result.medicalComment) {
+                        <div class="mr-lab-report-body">
+                          <div class="mr-lab-report-section-label">MEDICAL INTERPRETATION</div>
+                          <div class="mr-lab-report-comment">{{ lo.result.medicalComment }}</div>
+                        </div>
+                      } @else {
+                        <div class="mr-lab-report-body">
+                          <em class="mr-lab-no-comment">No medical comment added yet.</em>
+                        </div>
+                      }
+                      @if (lo.result.resultPdfPath) {
+                        <div class="mr-lab-report-actions">
+                          <a class="mr-pdf-btn" [href]="lo.result.resultPdfPath" target="_blank">
+                            📎 Download Full PDF Report
+                          </a>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="mr-lab-waiting">
+                      ⏳ Result not yet available — you will be notified when ready.
+                    </div>
+                  }
+
+                </div>
+              }
+            </div>
+          }
+
+        </div><!-- /mr-consult-card -->
+
+      }
+    </div><!-- /mr-doctor-section -->
+  }
+
+  <!-- Footer -->
+  <div class="mr-doc-footer">
+    <div>MediClinic — Generated on {{ today() }}</div>
+    <div>Confidential — For medical use only</div>
+  </div>
+
+</div>
+}

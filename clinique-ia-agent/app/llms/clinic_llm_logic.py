@@ -1,8 +1,10 @@
 import os
+import ssl
 import asyncio
 import logging
 from typing import Optional, Iterator
 
+import httpx
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
@@ -56,7 +58,6 @@ Tu dois :
 2. Collecter les symptômes du patient de façon naturelle (en discutant)
 3. Donner des CONSEILS PRATIQUES et des informations utiles EN PREMIER
 4. Ensuite recommander la spécialité médicale adaptée à la clinique
-5. Demander le prénom du patient naturellement au cours de la conversation
 
 ══ RÈGLES ABSOLUES ══
 - Réponds TOUJOURS dans la même langue que le patient
@@ -64,8 +65,9 @@ Tu dois :
 - Donne des conseils concrets AVANT de parler de spécialité
 - Ne pose qu'UNE question à la fois
 - Ne donne jamais de diagnostic définitif
+- NE DEMANDE JAMAIS le prénom du patient — tu le connais déjà, utilise-le directement
 - Si urgence vitale détectée → commence par "URGENCE_VITALE:" + conseils d'urgence
-- Quand tu as donné des conseils ET collecté suffisamment d'infos (prénom + symptômes + durée) → écris "COLLECTE_TERMINÉE" seul sur une ligne
+- Quand tu as donné des conseils ET collecté suffisamment d'infos (symptômes + durée) → écris "COLLECTE_TERMINÉE" seul sur une ligne
 
 ══ CONNAISSANCES MÉDICALES ══
 Fièvre :
@@ -128,10 +130,10 @@ CLINIC-AI : Je suis désolé d'apprendre que vous avez de la fièvre. Avant tout
 • Hydratez-vous bien : au moins 2L d'eau par jour
 • Reposez-vous et couvrez-vous légèrement
 
-Puis-je vous demander votre prénom, et à combien de degrés est votre fièvre actuellement ?
+À combien de degrés est votre fièvre actuellement ? Avez-vous d'autres symptômes associés ?
 
-Patient : je m'appelle Sara, j'ai 39.2°C
-CLINIC-AI : Bonjour Sara ! À 39.2°C, c'est une fièvre élevée qui nécessite attention. Avez-vous d'autres symptômes associés : toux, maux de gorge, douleurs corporelles, ou des maux de tête ?
+Patient : j'ai 39.2°C
+CLINIC-AI : À 39.2°C, c'est une fièvre élevée qui nécessite attention. Avez-vous d'autres symptômes associés : toux, maux de gorge, douleurs corporelles, ou des maux de tête ?
 
 Patient : oui j'ai aussi de la toux et mal à la gorge depuis 2 jours
 CLINIC-AI : Je comprends Sara. Voici mes conseils pour votre situation :
@@ -191,7 +193,6 @@ Quel est votre prénom et depuis combien de temps avez-vous ces symptômes ?""",
 2. جمع أعراض المريض بشكل طبيعي خلال المحادثة
 3. تقديم النصائح العملية والمعلومات المفيدة أولاً
 4. ثم التوصية بالتخصص الطبي المناسب في العيادة
-5. سؤال المريض عن اسمه بشكل طبيعي خلال المحادثة
 
 ══ قواعد مطلقة ══
 - أجب دائماً بنفس لغة المريض
@@ -199,8 +200,9 @@ Quel est votre prénom et depuis combien de temps avez-vous ces symptômes ?""",
 - قدم النصائح العملية قبل الحديث عن التخصص
 - اطرح سؤالاً واحداً فقط في كل مرة
 - لا تعطِ تشخيصاً نهائياً أبداً
+- لا تسأل المريض عن اسمه أبداً — أنت تعرفه بالفعل، استخدمه مباشرة
 - إذا اكتشفت حالة طارئة → ابدأ بـ "URGENCE_VITALE:" + نصائح الطوارئ
-- عندما تعطي النصائح وتجمع المعلومات الكافية (الاسم + الأعراض + المدة) → اكتب "COLLECTE_TERMINÉE" وحدها في سطر
+- عندما تعطي النصائح وتجمع المعلومات الكافية (الأعراض + المدة) → اكتب "COLLECTE_TERMINÉE" وحدها في سطر
 
 ══ المعرفة الطبية ══
 الحمى:
@@ -245,7 +247,7 @@ CLINIC-AI: أتمنى لك الشفاء العاجل. إليك بعض النصا
 • اشرب الكثير من الماء (2 لتر على الأقل)
 • استرح وتغطَّ بشكل خفيف
 
-ما اسمك الكريم؟ وكم تبلغ درجة حرارتك حالياً؟""",
+كم تبلغ درجة حرارتك حالياً؟ وهل لديك أعراض أخرى مصاحبة؟""",
 
 # ══════════════════════════════════════════════════════════════════════════
 "en": """You are CLINIC-AI, an expert medical assistant at the Smart Clinic.
@@ -256,7 +258,6 @@ You must:
 2. Collect patient symptoms naturally through conversation
 3. Give PRACTICAL ADVICE and useful information FIRST
 4. Then recommend the appropriate medical specialty at the clinic
-5. Ask the patient's name naturally during the conversation
 
 ══ ABSOLUTE RULES ══
 - ALWAYS respond in the same language as the patient
@@ -264,8 +265,9 @@ You must:
 - Give practical advice BEFORE mentioning specialty
 - Ask only ONE question at a time
 - Never give a definitive diagnosis
+- NEVER ask the patient's name — you already know it, use it directly
 - If vital emergency detected → start with "URGENCE_VITALE:" + emergency advice
-- When you have given advice AND collected enough info (name + symptoms + duration) → write "COLLECTE_TERMINÉE" alone on a line
+- When you have given advice AND collected enough info (symptoms + duration) → write "COLLECTE_TERMINÉE" alone on a line
 
 ══ MEDICAL KNOWLEDGE ══
 Fever:
@@ -310,10 +312,10 @@ CLINIC-AI: I'm sorry to hear you have a fever. First, here are my recommendation
 • Stay well hydrated: at least 2L of water per day
 • Rest and cover yourself lightly
 
-May I ask your name, and what is your temperature right now?
+What is your temperature right now, and do you have any other symptoms?
 
-Patient: I'm John, 39.2°C
-CLINIC-AI: Hi John! At 39.2°C, this is a high fever that needs attention. Do you have other symptoms: cough, sore throat, body aches, or headaches?
+Patient: 39.2°C
+CLINIC-AI: At 39.2°C, this is a high fever that needs attention. Do you have other symptoms: cough, sore throat, body aches, or headaches?
 
 Patient: yes I also have a cough and sore throat for 2 days
 CLINIC-AI: I understand John. Here are my recommendations:
@@ -327,25 +329,26 @@ COLLECTE_TERMINÉE"""
 
 # ── FINAL ANALYSIS PROMPT ──────────────────────────────────────────────────
 
-FINAL_ANALYSIS_PROMPT = """Tu es un médecin expert en triage médical de la Clinique Intelligente.
-Analyse les informations patient ci-dessous et génère une orientation médicale complète.
+FINAL_ANALYSIS_PROMPT = """You are an expert medical triage physician at the Smart Clinic.
+Analyze the patient information below and generate a complete medical orientation.
 
-INFORMATIONS COLLECTÉES :
-- Prénom du patient : {patient_name}
-- Catégorie de symptômes : {category}
-- Description des symptômes et conseils donnés : {symptoms}
-- Durée des symptômes : {duration}
+COLLECTED INFORMATION:
+- Patient name: {patient_name}
+- Symptom category: {category}
+- Symptom description and advice given: {symptoms}
+- Symptom duration: {duration}
+- Conversation language: {language}
 
-Génère une orientation structurée avec :
-- patient_name : prénom du patient
-- symptoms_summary : résumé clinique des symptômes en 1-2 phrases
-- symptoms_duration : durée des symptômes
-- disease_category : catégorie médicale identifiée
-- medical_specialty : spécialité la plus adaptée parmi [Cardiologie, Pneumologie, Gastro-entérologie, Neurologie, Orthopédie, Dermatologie, ORL, Médecine générale, Endocrinologie, Psychiatrie, Urgences]
-- urgency : faible / moyen / élevé
-- urgency_reason : courte explication du niveau d'urgence
-- response_to_patient : message personnalisé rassurant (max 3 phrases, mentionne le prénom)
-- recommended_action : salle_attente / consultation_programmee / urgences_immediat"""
+Generate a structured orientation with:
+- patient_name: patient's first name
+- symptoms_summary: clinical summary of symptoms in 1-2 sentences — WRITE IN THE CONVERSATION LANGUAGE ({language})
+- symptoms_duration: symptom duration — WRITE IN THE CONVERSATION LANGUAGE ({language})
+- disease_category: identified medical category
+- medical_specialty: most appropriate specialty from [Cardiologie, Pneumologie, Gastro-entérologie, Neurologie, Orthopédie, Dermatologie, ORL, Médecine générale, Endocrinologie, Psychiatrie, Urgences]
+- urgency: low / medium / high  (use exactly these English words)
+- urgency_reason: short explanation of urgency — WRITE IN THE CONVERSATION LANGUAGE ({language})
+- response_to_patient: personalized reassuring message (max 3 sentences, mention the patient's name) — WRITE IN THE CONVERSATION LANGUAGE ({language})
+- recommended_action: waiting_room / scheduled_consultation / emergency  (use exactly these English words)"""
 
 
 # ── HELPERS ────────────────────────────────────────────────────────────────
@@ -354,12 +357,18 @@ def _build_llm(temperature: float = 0.3) -> ChatGroq:
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key or api_key.startswith("gsk_REMPLACEZ"):
         raise ValueError("GROQ_API_KEY manquant dans le fichier .env")
+
+    # Windows Microsoft Store Python 3.9 lacks proper SSL root certs.
+    # Pass a custom httpx client with SSL verification disabled for local dev.
+    _http_client = httpx.Client(verify=False)
+
     return ChatGroq(
         model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         temperature=temperature,
         max_tokens=2048,
         max_retries=2,
         groq_api_key=api_key,
+        http_client=_http_client,
     )
 
 
@@ -466,7 +475,7 @@ class ClinicLLMLogic(ILLM):
 
     # ── Main entry point ─────────────────────────────────────────────────
 
-    def process_message(self, conversation_history: list, user_message: str, language: Optional[str] = "fr") -> dict:
+    def process_message(self, conversation_history: list, user_message: str, language: Optional[str] = "fr", patient_name: Optional[str] = None) -> dict:
         _ensure_event_loop()
 
         # 1. Hard emergency check before any LLM call
@@ -475,7 +484,7 @@ class ClinicLLMLogic(ILLM):
             return self._handle_vital_emergency(emergency)
 
         try:
-            messages = self._build_messages(conversation_history, user_message, language)
+            messages = self._build_messages(conversation_history, user_message, language, patient_name)
             response = self._llm_conv.invoke(messages)
             llm_response = response.content.strip()
 
@@ -537,16 +546,25 @@ class ClinicLLMLogic(ILLM):
             _ensure_event_loop()
             patient_name, category, symptoms, duration = self._extract_patient_info(history, last_message)
 
+            lang_label = (language or "fr").lower()
+            if lang_label.startswith("ar"):
+                lang_label = "Arabic"
+            elif lang_label.startswith("en"):
+                lang_label = "English"
+            else:
+                lang_label = "French"
+
             prompt = FINAL_ANALYSIS_PROMPT.format(
                 patient_name=patient_name,
                 category=category,
                 symptoms=symptoms,
                 duration=duration,
+                language=lang_label,
             )
 
             orientation: OrientationResult = self._llm_structured.invoke(prompt)
 
-            urgency_map = {"élevé": 1, "moyen": 2, "faible": 3}
+            urgency_map = {"high": 1, "medium": 2, "low": 3}
             self.queue_system.enqueue(
                 name=orientation.patient_name,
                 urgency=urgency_map.get(orientation.urgency, 3),

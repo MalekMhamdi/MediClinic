@@ -1,0 +1,303 @@
+<!-- ═══ NAVBAR ═══ -->
+<header class="hm-nav">
+  <div class="hm-nav-inner">
+    <div class="hm-logo">
+      <div class="hm-logo-icon"><span>+</span></div>
+      <div>
+        <div class="hm-logo-name">MediClinic</div>
+        <div class="hm-logo-tag">Smart Healthcare</div>
+      </div>
+    </div>
+    <nav class="hm-nav-links">
+      <a (click)="scrollTo('features')">Features</a>
+      <a (click)="scrollTo('how')">How it works</a>
+      <a (click)="scrollTo('specialties')">Specialties</a>
+      <a (click)="scrollTo('contact')">Contact</a>
+    </nav>
+    <div class="hm-nav-actions">
+      <button class="hm-btn-outline" routerLink="/login">Sign In</button>
+      <button class="hm-btn-primary" routerLink="/register">Get Started</button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hm-hero">
+  <div class="hm-hero-bg">
+    <div class="hm-hero-circle c1"></div>
+    <div class="hm-hero-circle c2"></div>
+    <div class="hm-hero-circle c3"></div>
+  </div>
+  <div class="hm-hero-content">
+    <div class="hm-hero-badge">🤖 AI-Powered Medical Orientation</div>
+    <h1 class="hm-hero-title">
+      Your Health,<br>
+      <span class="hm-hero-accent">Intelligently</span> Managed
+    </h1>
+    <p class="hm-hero-sub">
+      Describe your symptoms, get instant AI-powered medical advice,
+      and book an appointment with the right specialist — all in one place.
+    </p>
+    <div class="hm-hero-btns">
+      <button class="hm-btn-hero-primary" routerLink="/register">
+        Start AI Consultation ✨
+      </button>
+      <button class="hm-btn-hero-outline" routerLink="/login">
+        Sign In to My Space
+      </button>
+    </div>
+    <div class="hm-hero-stats">
+      <div class="hm-stat">
+        <div class="hm-stat-num">39+</div>
+        <div class="hm-stat-lbl">Doctors</div>
+      </div>
+      <div class="hm-stat-sep"></div>
+      <div class="hm-stat">
+        <div class="hm-stat-num">19</div>
+        <div class="hm-stat-lbl">Specialties</div>
+      </div>
+      <div class="hm-stat-sep"></div>
+      <div class="hm-stat">
+        <div class="hm-stat-num">24/7</div>
+        <div class="hm-stat-lbl">AI Assistant</div>
+      </div>
+      <div class="hm-stat-sep"></div>
+      <div class="hm-stat">
+        <div class="hm-stat-num">100%</div>
+        <div class="hm-stat-lbl">Secure</div>
+      </div>
+    </div>
+  </div>
+  <div class="hm-hero-visual">
+    <div class="hm-phone-card">
+      <div class="hm-phone-header">
+        <div class="hm-phone-dot"></div>
+        <span>AI Medical Assistant</span>
+        <span class="hm-phone-online">● Online</span>
+      </div>
+      <div class="hm-phone-msg ai">
+        Hello! How can I help you today? Do you have any symptoms to describe?
+      </div>
+      <div class="hm-phone-msg user">
+        I have a headache and fever since yesterday…
+      </div>
+      <div class="hm-phone-msg ai">
+        I understand. For fever above 38.5°C, take paracetamol and stay hydrated.
+        Based on your symptoms, I recommend consulting <strong>Neurology</strong>.
+      </div>
+      <div class="hm-phone-book">
+        <span>📅</span> Book with Dr. Amine Slama
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="hm-section" id="features">
+  <div class="hm-section-inner">
+    <div class="hm-section-label">Why MediClinic</div>
+    <h2 class="hm-section-title">Everything you need for your health</h2>
+    <p class="hm-section-sub">One platform connecting patients, doctors, and lab technicians seamlessly.</p>
+
+    <div class="hm-features-grid">
+      <div class="hm-feature-card">
+        <div class="hm-feature-icon" style="background:#e8f4fd;">🤖</div>
+        <h3>AI Orientation</h3>
+        <p>Our AI analyzes your symptoms, gives medical advice, and recommends the right specialist for your case.</p>
+      </div>
+      <div class="hm-feature-card">
+        <div class="hm-feature-icon" style="background:#eafaf1;">📅</div>
+        <h3>Easy Appointments</h3>
+        <p>Book appointments with available doctors in seconds. Choose your specialty, doctor, date and time.</p>
+      </div>
+      <div class="hm-feature-card">
+        <div class="hm-feature-icon" style="background:#fef9e7;">📋</div>
+        <h3>Medical Records</h3>
+        <p>Access your complete medical history, prescriptions, lab results and consultations anytime.</p>
+      </div>
+      <div class="hm-feature-card">
+        <div class="hm-feature-icon" style="background:#fdf2f8;">🔬</div>
+        <h3>Lab Results</h3>
+        <p>Receive your laboratory analysis results directly in your personal space, securely and instantly.</p>
+      </div>
+      <div class="hm-feature-card">
+        <div class="hm-feature-icon" style="background:#f0f0ff;">🔔</div>
+        <h3>Smart Notifications</h3>
+        <p>Stay informed about your appointments, results and medical updates with real-time notifications.</p>
+      </div>
+      <div class="hm-feature-card">
+        <div class="hm-feature-icon" style="background:#fff0f0;">🔒</div>
+        <h3>Secure & Private</h3>
+        <p>Your health data is protected with JWT authentication and end-to-end encryption.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section class="hm-section hm-section-dark" id="how">
+  <div class="hm-section-inner">
+    <div class="hm-section-label light">How It Works</div>
+    <h2 class="hm-section-title light">From symptoms to appointment in 3 steps</h2>
+
+    <div class="hm-steps">
+      <div class="hm-step">
+        <div class="hm-step-num">01</div>
+        <div class="hm-step-icon">💬</div>
+        <h3>Describe your symptoms</h3>
+        <p>Chat with our AI assistant in any language. It listens, advises and understands your condition.</p>
+      </div>
+      <div class="hm-step-arrow">→</div>
+      <div class="hm-step">
+        <div class="hm-step-num">02</div>
+        <div class="hm-step-icon">🧠</div>
+        <h3>AI recommends a specialist</h3>
+        <p>The AI analyzes your case, gives practical health advice and identifies the right medical specialty.</p>
+      </div>
+      <div class="hm-step-arrow">→</div>
+      <div class="hm-step">
+        <div class="hm-step-num">03</div>
+        <div class="hm-step-icon">📅</div>
+        <h3>Book your appointment</h3>
+        <p>The doctor is pre-selected for you. Choose a date and time — your appointment is confirmed instantly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SPECIALTIES ═══ -->
+<section class="hm-section" id="specialties">
+  <div class="hm-section-inner">
+    <div class="hm-section-label">Medical Expertise</div>
+    <h2 class="hm-section-title">19 specialties available</h2>
+    <p class="hm-section-sub">Our team of 39+ specialists covers all major medical fields.</p>
+
+    <div class="hm-specs-grid">
+      <div class="hm-spec">❤️ Cardiology</div>
+      <div class="hm-spec">🧠 Neurology</div>
+      <div class="hm-spec">🫁 Pulmonology</div>
+      <div class="hm-spec">🫃 Gastroenterology</div>
+      <div class="hm-spec">🦴 Orthopedics</div>
+      <div class="hm-spec">🧴 Dermatology</div>
+      <div class="hm-spec">👂 ENT</div>
+      <div class="hm-spec">🩺 General Medicine</div>
+      <div class="hm-spec">🔬 Endocrinology</div>
+      <div class="hm-spec">🧘 Psychiatry</div>
+      <div class="hm-spec">👁️ Ophthalmology</div>
+      <div class="hm-spec">🌸 Gynecology</div>
+      <div class="hm-spec">👶 Pediatrics</div>
+      <div class="hm-spec">💧 Urology</div>
+      <div class="hm-spec">🩻 Radiology</div>
+      <div class="hm-spec">🦱 Rheumatology</div>
+      <div class="hm-spec">🦠 Infectiology</div>
+      <div class="hm-spec">🔪 Surgery</div>
+      <div class="hm-spec">🚨 Emergency</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PORTALS ═══ -->
+<section class="hm-section hm-section-light" id="contact">
+  <div class="hm-section-inner">
+    <div class="hm-section-label">Access</div>
+    <h2 class="hm-section-title">One clinic, four portals</h2>
+    <p class="hm-section-sub">Each role has a dedicated workspace tailored to their needs.</p>
+
+    <div class="hm-portals">
+      <div class="hm-portal-card patient">
+        <div class="hm-portal-icon">🧑‍⚕️</div>
+        <h3>Patient</h3>
+        <ul>
+          <li>AI medical orientation</li>
+          <li>Appointment booking</li>
+          <li>Medical records</li>
+          <li>Lab results</li>
+        </ul>
+        <button routerLink="/register">Create account</button>
+      </div>
+      <div class="hm-portal-card doctor">
+        <div class="hm-portal-icon">👨‍⚕️</div>
+        <h3>Doctor</h3>
+        <ul>
+          <li>Manage appointments</li>
+          <li>Patient consultations</li>
+          <li>Issue prescriptions</li>
+          <li>Order lab tests</li>
+        </ul>
+        <button routerLink="/login">Sign in</button>
+      </div>
+      <div class="hm-portal-card lab">
+        <div class="hm-portal-icon">🔬</div>
+        <h3>Lab Technician</h3>
+        <ul>
+          <li>Pending analyses</li>
+          <li>Submit results</li>
+          <li>Track orders</li>
+          <li>Patient history</li>
+        </ul>
+        <button routerLink="/login">Sign in</button>
+      </div>
+      <div class="hm-portal-card admin">
+        <div class="hm-portal-icon">⚙️</div>
+        <h3>Administrator</h3>
+        <ul>
+          <li>Clinic statistics</li>
+          <li>User management</li>
+          <li>Specialties & doctors</li>
+          <li>System settings</li>
+        </ul>
+        <button routerLink="/login">Sign in</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="hm-cta">
+  <div class="hm-cta-inner">
+    <h2>Ready to take care of your health?</h2>
+    <p>Join MediClinic and experience AI-powered healthcare today.</p>
+    <button class="hm-btn-hero-primary" routerLink="/register">Create your free account →</button>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="hm-footer">
+  <div class="hm-footer-inner">
+    <div class="hm-footer-brand">
+      <div class="hm-logo">
+        <div class="hm-logo-icon"><span>+</span></div>
+        <div>
+          <div class="hm-logo-name">MediClinic</div>
+          <div class="hm-logo-tag">Smart Healthcare</div>
+        </div>
+      </div>
+      <p>AI-powered clinic management platform connecting patients, doctors and medical staff.</p>
+    </div>
+    <div class="hm-footer-links">
+      <div class="hm-footer-col">
+        <div class="hm-footer-col-title">Platform</div>
+        <a routerLink="/login">Patient Portal</a>
+        <a routerLink="/login">Doctor Portal</a>
+        <a routerLink="/login">Lab Portal</a>
+        <a routerLink="/login">Admin Panel</a>
+      </div>
+      <div class="hm-footer-col">
+        <div class="hm-footer-col-title">Features</div>
+        <a>AI Orientation</a>
+        <a>Appointments</a>
+        <a>Medical Records</a>
+        <a>Lab Results</a>
+      </div>
+      <div class="hm-footer-col">
+        <div class="hm-footer-col-title">Contact</div>
+        <a>contact&#64;mediclinic.tn</a>
+        <a>+216 71 000 000</a>
+        <a>Tunis, Tunisia</a>
+      </div>
+    </div>
+  </div>
+  <div class="hm-footer-bottom">
+    © 2026 MediClinic — All rights reserved.
+  </div>
+</footer>

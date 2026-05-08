@@ -1,0 +1,71 @@
+<!-- Tabs -->
+<div class="apt-tabs">
+  <button class="apt-tab" [class.active]="activeTab() === 'upcoming'" (click)="setTab('upcoming')">Upcoming</button>
+  <button class="apt-tab" [class.active]="activeTab() === 'past'"     (click)="setTab('past')">Past</button>
+  <button class="apt-tab" [class.active]="activeTab() === 'cancelled'" (click)="setTab('cancelled')">Cancelled</button>
+</div>
+
+<!-- Toolbar -->
+<div class="apt-toolbar">
+  <a class="apt-btn-primary" routerLink="../book-appointment">+ Book Appointment</a>
+</div>
+
+<!-- Loading state -->
+@if (loading()) {
+  <div class="apt-empty">
+    <div class="apt-empty-icon">⏳</div>
+    <div>Loading appointments...</div>
+  </div>
+}
+
+<!-- Error state -->
+@if (error() && !loading()) {
+  <div class="apt-empty">
+    <div class="apt-empty-icon">⚠️</div>
+    <div>{{ error() }}</div>
+    <button class="apt-btn-primary" style="margin-top:12px" (click)="loadAppointments()">Retry</button>
+  </div>
+}
+
+<!-- Empty state -->
+@if (!loading() && !error() && filtered.length === 0) {
+  <div class="apt-empty">
+    <div class="apt-empty-icon">📅</div>
+    <div>No appointments in this category</div>
+  </div>
+}
+
+<!-- Cards -->
+@if (!loading() && !error()) {
+  @for (apt of filtered; track apt.id) {
+    <div class="apt-card">
+
+      <div class="apt-date" [class.amber]="apt.status === 'pending'">
+        <div class="apt-month">{{ apt.date | date:'MMM' }}</div>
+        <div class="apt-day">{{ apt.date | date:'dd' }}</div>
+        <div class="apt-year">{{ apt.date | date:'yyyy' }}</div>
+      </div>
+
+      <div class="apt-info">
+        <div class="apt-title">{{ apt.type }}</div>
+        <div class="apt-meta">
+          <span>🩺 {{ apt.doctor }}</span>
+          <span>🕐 {{ apt.time }}</span>
+          <span>🏥 {{ apt.specialty }}</span>
+        </div>
+      </div>
+
+      <span class="apt-status" [ngClass]="apt.status">{{ statusLabel(apt.status) }}</span>
+
+      <div class="apt-actions">
+        @if (apt.status === 'confirmed' || apt.status === 'pending') {
+          <button class="apt-btn-outline danger" (click)="cancel(apt.id)">Cancel</button>
+        }
+        @if (apt.status === 'cancelled' || apt.status === 'refused') {
+          <button class="apt-btn-outline danger" (click)="deleteAppt(apt.id)">🗑 Delete</button>
+        }
+      </div>
+
+    </div>
+  }
+}

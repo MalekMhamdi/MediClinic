@@ -1,0 +1,179 @@
+:host {
+  --navy:  #0B2D5C;
+  --green: #1D9E75;
+  --mine:  #0B2D5C;
+  --bg:    #f4f7fb;
+  --border:rgba(11,45,92,.10);
+  --shadow:0 8px 32px rgba(11,45,92,.18);
+}
+
+/* ── Alert popup ─────────────────────────────────────────────── */
+.cp-alert {
+  position: fixed; bottom: 90px; right: 20px;
+  width: 290px; background: white;
+  border-radius: 14px; border-left: 4px solid var(--green);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; cursor: pointer; z-index: 1200;
+  animation: slideIn .25s ease;
+}
+@keyframes slideIn { from { transform:translateX(120%); opacity:0 } to { transform:translateX(0); opacity:1 } }
+
+.cp-alert-avatar {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--navy); color:white;
+  font-size:15px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.cp-alert-body  { flex:1; overflow:hidden; }
+.cp-alert-name  { font-size:12px; font-weight:700; color:var(--navy); }
+.cp-alert-text  { font-size:12px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cp-alert-close { background:transparent; border:none; color:#aaa; font-size:18px; cursor:pointer; flex-shrink:0; }
+.cp-alert-close:hover { color:#e74c3c; }
+
+/* ── FAB ─────────────────────────────────────────────────────── */
+.cp-fab {
+  position:fixed; bottom:24px; right:24px;
+  width:52px; height:52px; border-radius:50%; border:none;
+  background:var(--navy); color:white; font-size:22px;
+  box-shadow:var(--shadow); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  z-index:1100; transition:transform .15s, background .15s;
+}
+.cp-fab:hover { transform:scale(1.08); background:#1a4a8a; }
+.cp-fab-badge {
+  position:absolute; top:-4px; right:-4px;
+  background:#e74c3c; color:white; font-size:10px; font-weight:800;
+  width:18px; height:18px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* ── Window ──────────────────────────────────────────────────── */
+.cp-window {
+  position:fixed; bottom:86px; right:24px;
+  width:340px; height:520px;
+  background:white; border-radius:18px;
+  box-shadow:var(--shadow);
+  display:flex; flex-direction:column; overflow:hidden;
+  z-index:1100; animation:popUp .2s ease;
+}
+@keyframes popUp { from { transform:scale(.9) translateY(20px); opacity:0 } to { transform:scale(1) translateY(0); opacity:1 } }
+
+/* ── Header ──────────────────────────────────────────────────── */
+.cp-header {
+  background:var(--navy); color:white;
+  padding:12px 14px; display:flex; align-items:center; gap:10px; flex-shrink:0;
+}
+.cp-header-title { font-size:14px; font-weight:700; flex:1; }
+.cp-header-info  { flex:1; }
+.cp-header-name  { font-size:13px; font-weight:700; }
+.cp-header-role  { font-size:11px; opacity:.7; }
+.cp-back  { background:transparent; border:none; color:white; font-size:18px; cursor:pointer; padding:0 6px 0 0; }
+.cp-close { background:transparent; border:none; color:rgba(255,255,255,.7); font-size:20px; cursor:pointer; line-height:1; }
+.cp-close:hover { color:white; }
+
+/* ── Contacts ────────────────────────────────────────────────── */
+.cp-contacts { flex:1; overflow-y:auto; }
+.cp-contact {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px; cursor:pointer;
+  border-bottom:1px solid var(--border); transition:background .15s;
+}
+.cp-contact:hover { background:var(--bg); }
+.cp-contact-avatar {
+  width:38px; height:38px; border-radius:50%;
+  background:var(--navy); color:white;
+  font-size:15px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.cp-contact-info  { flex:1; overflow:hidden; }
+.cp-contact-name  { font-size:13px; font-weight:600; color:var(--navy); }
+.cp-contact-last  { font-size:11px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cp-contact-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
+.cp-unread-badge  { background:var(--green); color:white; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; }
+.cp-contact-time  { font-size:10px; color:#aaa; }
+
+.cp-del-conv-btn {
+  background:transparent; border:none; font-size:13px;
+  cursor:pointer; opacity:0; transition:opacity .15s; padding:2px;
+}
+.cp-contact:hover .cp-del-conv-btn { opacity:.5; }
+.cp-del-conv-btn:hover { opacity:1 !important; }
+
+/* Confirmation suppression conversation */
+.cp-del-confirm {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px; background:#fff3f3;
+  border-bottom:1px solid #fcc; font-size:12px; color:#c0392b;
+}
+.cp-del-confirm span { flex:1; }
+.cp-del-yes {
+  padding:4px 10px; border-radius:6px; border:none;
+  background:#e74c3c; color:white; font-size:12px; font-weight:700; cursor:pointer;
+}
+.cp-del-no {
+  padding:4px 10px; border-radius:6px; border:1px solid #ccc;
+  background:white; font-size:12px; cursor:pointer;
+}
+
+.cp-empty { text-align:center; color:#aaa; font-size:13px; padding:30px 16px; line-height:1.6; }
+
+/* ── Messages ────────────────────────────────────────────────── */
+.cp-messages {
+  flex:1; overflow-y:auto; padding:12px 10px;
+  display:flex; flex-direction:column; gap:6px; background:var(--bg);
+}
+
+.cp-msg-row {
+  display:flex; align-items:flex-end; gap:6px; position:relative;
+}
+.cp-msg-row.mine { flex-direction:row-reverse; }
+
+.cp-msg-avatar {
+  width:28px; height:28px; border-radius:50%;
+  background:#dde4f0; color:var(--navy);
+  font-size:12px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+.cp-msg-bubble {
+  max-width:72%; background:#e8edf5;
+  border-radius:14px 14px 14px 4px; padding:8px 12px;
+}
+.cp-msg-bubble.mine {
+  background:var(--mine); color:white;
+  border-radius:14px 14px 4px 14px;
+}
+.cp-msg-text { font-size:13px; line-height:1.4; word-break:break-word; }
+.cp-msg-meta { font-size:10px; color:rgba(0,0,0,.3); margin-top:3px; text-align:right; }
+.cp-msg-bubble.mine .cp-msg-meta { color:rgba(255,255,255,.5); }
+.cp-read { color:var(--green); }
+.cp-msg-bubble.mine .cp-read { color:#7fc8f7; }
+
+.cp-delete-msg {
+  background:transparent; border:none; font-size:13px;
+  cursor:pointer; opacity:.5; padding:2px; transition:opacity .15s;
+}
+.cp-delete-msg:hover { opacity:1; }
+
+/* ── Input ───────────────────────────────────────────────────── */
+.cp-input-row {
+  display:flex; align-items:flex-end; gap:6px;
+  padding:8px 10px; border-top:1px solid var(--border);
+  background:white; flex-shrink:0;
+}
+.cp-input {
+  flex:1; resize:none; border:1.5px solid var(--border);
+  border-radius:20px; padding:8px 12px;
+  font-size:13px; font-family:inherit;
+  max-height:80px; overflow-y:auto; transition:border .2s;
+}
+.cp-input:focus { outline:none; border-color:var(--navy); }
+.cp-send {
+  width:36px; height:36px; border-radius:50%; border:none;
+  background:var(--navy); color:white; font-size:14px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background .15s; flex-shrink:0;
+}
+.cp-send:disabled { background:#ccc; cursor:not-allowed; }
+.cp-send:not(:disabled):hover { background:#1a4a8a; }

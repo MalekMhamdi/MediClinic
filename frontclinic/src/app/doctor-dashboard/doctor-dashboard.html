@@ -1,0 +1,517 @@
+<div class="dr-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="dr-sidebar">
+    <div class="dr-logo">
+      <div class="dr-logo-icon"><div class="dr-cross"></div></div>
+      <div>
+        <div class="dr-logo-text">MediClinic</div>
+        <div class="dr-logo-sub">Doctor Portal</div>
+      </div>
+    </div>
+
+    <div class="dr-user-card">
+      <div class="dr-avatar">{{ initials }}</div>
+      <div>
+        <div class="dr-user-name">{{ auth.userName }}</div>
+        <div class="dr-user-role">Doctor</div>
+      </div>
+    </div>
+
+    <div class="dr-nav">
+      <div class="dr-nav-section">Management</div>
+
+      <a class="dr-nav-item" [class.active]="tab() === 'appointments'" (click)="setTab('appointments')">
+        <span>📋</span> Appointments
+        @if (stats.pending > 0) {
+          <span class="dr-badge">{{ stats.pending }}</span>
+        }
+      </a>
+      <a class="dr-nav-item" [class.active]="tab() === 'planning'" (click)="setTab('planning')">
+        <span>📅</span> Planning
+      </a>
+      <a class="dr-nav-item" [class.active]="tab() === 'patients'" (click)="setTab('patients')">
+        <span>👥</span> Patients
+        <span class="dr-nav-count">{{ uniquePatients.length }}</span>
+      </a>
+      <a class="dr-nav-item" [class.active]="tab() === 'lab-results'" (click)="setTab('lab-results')">
+        <span>🔬</span> Lab Results
+      </a>
+      <a class="dr-nav-item" [class.active]="tab() === 'notifications'" (click)="setTab('notifications')">
+        <span>🔔</span> Notifications
+        @if (unreadCount() > 0) {
+          <span class="dr-badge">{{ unreadCount() }}</span>
+        }
+      </a>
+      @if (tab() === 'consultation') {
+        <a class="dr-nav-item active" (click)="setTab('consultation')">
+          <span>📝</span> Consultation
+        </a>
+      }
+    </div>
+
+    <div class="dr-sidebar-footer">
+      <div class="dr-logout" (click)="logout()"><span>→</span> Sign Out</div>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="dr-main">
+
+    <!-- Topbar -->
+    <div class="dr-topbar">
+      <div>
+        <div class="dr-topbar-title">
+          @if (tab() === 'appointments')  { Appointments }
+          @else if (tab() === 'planning') { My Planning }
+          @else if (tab() === 'patients') { My Patients }
+          @else if (tab() === 'lab-results')    { Lab Results }
+          @else if (tab() === 'notifications')  { Notifications }
+          @else { Consultation }
+        </div>
+        <div class="dr-topbar-sub">{{ today }}</div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="dr-stats-bar">
+        <div class="dr-stat"><span class="n">{{ stats.total }}</span><span class="l">Total</span></div>
+        <div class="dr-stat pending"><span class="n">{{ stats.pending }}</span><span class="l">Pending</span></div>
+        <div class="dr-stat confirmed"><span class="n">{{ stats.confirmed }}</span><span class="l">Confirmed</span></div>
+        <div class="dr-stat completed"><span class="n">{{ stats.completed }}</span><span class="l">Completed</span></div>
+      </div>
+    </div>
+
+    <div class="dr-content">
+
+      <!-- ════════════════ APPOINTMENTS TAB ════════════════ -->
+      @if (tab() === 'appointments') {
+
+        <!-- Filter chips -->
+        <div class="dr-filters">
+          @for (f of [['all','All'],['Pending','Pending'],['Confirmed','Confirmed'],['Completed','Completed'],['Refused','Refused']]; track f[0]) {
+            <button class="dr-chip" [class.active]="apptFilter() === f[0]" (click)="apptFilter.set($any(f[0]))">
+              {{ f[1] }}
+              @if (f[0] !== 'all') {
+                <span>({{ appointments().filter(a => a.status === f[0]).length }})</span>
+              }
+            </button>
+          }
+        </div>
+
+        @if (loading()) {
+          <div class="dr-empty">Loading...</div>
+        } @else if (error()) {
+          <div class="dr-empty error">⚠ {{ error() }} <button (click)="loadAppointments()">Retry</button></div>
+        } @else if (filtered().length === 0) {
+          <div class="dr-empty">📭 No appointments in this category.</div>
+        } @else {
+          <div class="dr-appt-list">
+            @for (appt of filtered(); track appt.id) {
+              <div class="dr-appt-card" [class]="'border-' + statusClass(appt.status)">
+
+                <div class="dr-appt-date-col">
+                  <div class="dr-appt-day">{{ appt.dateTime | date:'dd' }}</div>
+                  <div class="dr-appt-mon">{{ appt.dateTime | date:'MMM' }}</div>
+                  <div class="dr-appt-time">{{ appt.dateTime | date:'HH:mm' }}</div>
+                </div>
+
+                <div class="dr-appt-body">
+                  <div class="dr-appt-patient">{{ appt.patientFullName }}</div>
+                  <div class="dr-appt-reason">{{ appt.reason || 'No reason specified' }}</div>
+                </div>
+
+                <div class="dr-appt-right">
+                  <span class="dr-status-pill" [class]="statusClass(appt.status)">
+                    {{ appt.statusLabel }}
+                  </span>
+                  <div class="dr-appt-actions">
+                    @if (appt.status === 'Pending') {
+                      <button class="dr-btn-accept" (click)="accept(appt.id)">✔ Accept</button>
+                      <button class="dr-btn-refuse" (click)="refuse(appt.id)">✕ Refuse</button>
+                    }
+                    @if (appt.status === 'Confirmed' && !appt.hasConsultation) {
+                      <button class="dr-btn-consult" (click)="openConsultation(appt)">📝 Consult</button>
+                    }
+                    @if (appt.hasConsultation) {
+                      <button class="dr-btn-view" (click)="openConsultation(appt)">👁 View</button>
+                    }
+                    @if (appt.status === 'Refused' || appt.status === 'Completed' || appt.status === 'Cancelled') {
+                      <button class="dr-btn-refuse" style="font-size:11px" (click)="deleteAppt(appt.id)">🗑</button>
+                    }
+                    <button class="dr-btn-patient" (click)="openPatientHistory(appt.patientId, appt.patientFullName); setTab('patients')">
+                      🧑 Patient
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- ════════════════ PLANNING TAB ════════════════ -->
+      @if (tab() === 'planning') {
+        <div class="dr-planning">
+
+          <!-- Calendar strip -->
+          <div class="dr-calendar-strip">
+            @for (day of planDays(); track day.date) {
+              <div class="dr-cal-day"
+                [class.today]="isToday(day.date)"
+                [class.has-appts]="day.count > 0"
+                [class.selected]="selectedDay()?.date === day.date"
+                (click)="selectDay(day)">
+                <div class="dr-cal-label">{{ day.label }}</div>
+                @if (day.count > 0) {
+                  <div class="dr-cal-badge">{{ day.count }}</div>
+                } @else {
+                  <div class="dr-cal-empty">—</div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Selected day detail -->
+          @if (selectedDay()) {
+            <div class="dr-day-detail">
+              <div class="dr-day-title">
+                📅 {{ selectedDay()!.label }} —
+                <strong>{{ selectedDay()!.count }} appointment{{ selectedDay()!.count !== 1 ? 's' : '' }}</strong>
+              </div>
+
+              @if (selectedDay()!.count === 0) {
+                <div class="dr-empty">No appointments scheduled for this day.</div>
+              } @else {
+                <div class="dr-timeline">
+                  @for (appt of selectedDay()!.appointments; track appt.id) {
+                    <div class="dr-timeline-item" [class]="statusClass(appt.status)">
+                      <div class="dr-timeline-time">{{ formatTime(appt.dateTime) }}</div>
+                      <div class="dr-timeline-dot"></div>
+                      <div class="dr-timeline-body">
+                        <div class="dr-timeline-patient">{{ appt.patientFullName }}</div>
+                        <div class="dr-timeline-reason">{{ appt.reason || 'No reason' }}</div>
+                        <span class="dr-status-pill" [class]="statusClass(appt.status)">{{ appt.statusLabel }}</span>
+                      </div>
+                      <div class="dr-timeline-actions">
+                        @if (appt.status === 'Pending') {
+                          <button class="dr-btn-accept" (click)="accept(appt.id)">✔</button>
+                          <button class="dr-btn-refuse" (click)="refuse(appt.id)">✕</button>
+                        }
+                        @if (appt.status === 'Confirmed' || appt.hasConsultation) {
+                          <button class="dr-btn-consult" (click)="openConsultation(appt)">📝</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="dr-planning-hint">👆 Click a day to view its appointments</div>
+          }
+        </div>
+      }
+
+      <!-- ════════════════ PATIENTS TAB ════════════════ -->
+      @if (tab() === 'patients') {
+        <div class="dr-patients">
+
+          @if (!selectedPatientId()) {
+            <!-- Patient list -->
+            @if (uniquePatients.length === 0) {
+              <div class="dr-empty">No patients yet.</div>
+            } @else {
+              <div class="dr-patient-grid">
+                @for (p of uniquePatients; track p.id) {
+                  <div class="dr-patient-card" (click)="openPatientHistory(p.id, p.name)">
+                    <div class="dr-pat-avatar">{{ p.name.split(' ')[0][0] }}{{ p.name.split(' ')[1]?.[0] ?? '' }}</div>
+                    <div class="dr-pat-info">
+                      <div class="dr-pat-name">{{ p.name }}</div>
+                      <div class="dr-pat-last">Last visit: {{ p.lastVisit | date:'dd MMM yyyy' }}</div>
+                    </div>
+                    <span class="dr-pat-arrow">→</span>
+                  </div>
+                }
+              </div>
+            }
+          } @else {
+            <!-- En-tête patient (toujours visible) -->
+            <div class="dr-patient-header">
+              <button class="dr-btn-back" (click)="clearPatient()">← Retour</button>
+              <div class="dr-patient-title">
+                <div class="dr-pat-avatar large">
+                  {{ selectedPatientName().split(' ')[0][0] }}{{ selectedPatientName().split(' ')[1]?.[0] ?? '' }}
+                </div>
+                <div>
+                  <div class="dr-pat-name" style="font-size:18px">{{ selectedPatientName() }}</div>
+                  <div class="dr-pat-last">{{ patientHistory().length }} appointment(s) recorded</div>
+                </div>
+              </div>
+              <button
+                class="dr-btn-record"
+                [class.active]="showMedicalRecord()"
+                (click)="showMedicalRecord() ? closeMedicalRecord() : openMedicalRecord()">
+                {{ showMedicalRecord() ? '📋 Appointment History' : '📋 Full Medical Record' }}
+              </button>
+            </div>
+
+            <!-- ── FULL MEDICAL RECORD (same view as patient) ── -->
+            @if (showMedicalRecord()) {
+              <app-medical-record [patientId]="selectedPatientId()!"></app-medical-record>
+            } @else {
+
+              <!-- ── APPOINTMENT HISTORY ── -->
+              @if (loadingPatient()) {
+                <div class="dr-empty">Loading history...</div>
+              } @else if (patientHistory().length === 0) {
+                <div class="dr-empty">No appointments found for this patient.</div>
+              } @else {
+                <div class="dr-appt-list">
+                  @for (appt of patientHistory(); track appt.id) {
+                    <div class="dr-appt-card" [class]="'border-' + statusClass(appt.status)">
+                      <div class="dr-appt-date-col">
+                        <div class="dr-appt-day">{{ appt.dateTime | date:'dd' }}</div>
+                        <div class="dr-appt-mon">{{ appt.dateTime | date:'MMM yyyy' }}</div>
+                        <div class="dr-appt-time">{{ appt.dateTime | date:'HH:mm' }}</div>
+                      </div>
+                      <div class="dr-appt-body">
+                        <div class="dr-appt-patient">{{ appt.doctorFullName }} — {{ appt.doctorSpecialty }}</div>
+                        <div class="dr-appt-reason">{{ appt.reason || 'No reason specified' }}</div>
+                      </div>
+                      <div class="dr-appt-right">
+                        <span class="dr-status-pill" [class]="statusClass(appt.status)">{{ appt.statusLabel }}</span>
+                        @if (appt.hasConsultation) {
+                          <button class="dr-btn-view" (click)="openConsultation(appt)">📝 View consultation</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+            }
+          }
+        </div>
+      }
+
+      <!-- ════════════════ LAB RESULTS TAB ════════════════ -->
+      @if (tab() === 'lab-results') {
+        <div class="dr-lab-section">
+
+          @if (loadingLab()) {
+            <div class="dr-empty">Loading lab results...</div>
+          } @else if (labResults().length === 0) {
+            <div class="dr-empty">🔬 No lab results available yet.</div>
+          } @else {
+
+            <div class="dr-lab-table">
+              <div class="dr-lab-thead">
+                <span>Patient</span>
+                <span>Analysis Type</span>
+                <span>Technician</span>
+                <span>Lab Comment</span>
+                <span>Status</span>
+                <span>Date</span>
+                <span>Actions</span>
+              </div>
+
+              @for (r of labResults(); track r.id) {
+                <div class="dr-lab-row">
+                  <span class="dr-lab-patient">{{ r.patientName }}</span>
+                  <span class="dr-lab-type">{{ r.analysisType }}</span>
+                  <span class="dr-lab-tech">{{ r.technicienName }}</span>
+                  <span class="dr-lab-comment">{{ r.labComment || '—' }}</span>
+                  <span class="dr-status-pill" [class]="labStatusClass(r.status)">{{ r.statusLabel }}</span>
+                  <span class="dr-lab-date">{{ r.createdAt | date:'dd MMM yyyy' }}</span>
+                  <span style="display:flex;gap:6px;align-items:center">
+                    <button class="dr-btn-comment" (click)="openComment(r)">💬 Comment</button>
+                    <button class="dr-notif-delete" title="Delete result" (click)="deleteLabResult(r.id)">×</button>
+                  </span>
+                </div>
+              }
+            </div>
+
+          }
+
+          <!-- Comment modal -->
+          @if (commentTarget()) {
+            <div class="dr-modal-overlay" (click)="closeComment()">
+              <div class="dr-modal" (click)="$event.stopPropagation()">
+                <div class="dr-modal-title">💬 Send Comment to Patient</div>
+                <div class="dr-modal-sub">
+                  <strong>{{ commentTarget()!.patientName }}</strong> — {{ commentTarget()!.analysisType }}
+                </div>
+                @if (commentOk()) {
+                  <div class="dr-alert success">✔ {{ commentOk() }}</div>
+                }
+                <textarea
+                  class="dr-modal-textarea"
+                  rows="4"
+                  placeholder="Write your comment for the patient..."
+                  [value]="commentText()"
+                  (input)="commentText.set($any($event.target).value)">
+                </textarea>
+                <div class="dr-modal-actions">
+                  <button class="dr-btn-back" (click)="closeComment()">Cancel</button>
+                  <button class="dr-btn-save" (click)="sendComment()" [disabled]="sendingComment()">
+                    {{ sendingComment() ? 'Sending...' : '✔ Send' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
+        </div>
+      }
+
+      <!-- ════════════════ NOTIFICATIONS TAB ════════════════ -->
+      @if (tab() === 'notifications') {
+        <div class="dr-notif-section">
+
+          <div class="dr-notif-header">
+            <span>{{ notifications().length }} notification{{ notifications().length !== 1 ? 's' : '' }}</span>
+            @if (unreadCount() > 0) {
+              <button class="dr-btn-outline-sm" (click)="markAllRead()">✔ Mark all as read</button>
+            }
+          </div>
+
+          @if (loadingNotif()) {
+            <div class="dr-empty">Loading notifications...</div>
+          } @else if (notifications().length === 0) {
+            <div class="dr-empty">🔔 No notifications yet.</div>
+          } @else {
+            <div class="dr-notif-list">
+              @for (n of notifications(); track n.id) {
+                <div class="dr-notif-item" [class.unread]="!n.isRead" (click)="markRead(n.id)">
+                  <div class="dr-notif-icon">{{ notifIcon(n.type) }}</div>
+                  <div class="dr-notif-body">
+                    <div class="dr-notif-title">{{ n.title || n.type }}</div>
+                    <div class="dr-notif-msg">{{ n.message }}</div>
+                    <div class="dr-notif-date">{{ n.createdAt | date:'dd MMM yyyy · HH:mm' }}</div>
+                  </div>
+                  @if (!n.isRead) {
+                    <div class="dr-notif-dot"></div>
+                  }
+                  <button class="dr-notif-delete" title="Supprimer" (click)="deleteNotif(n.id); $event.stopPropagation()">×</button>
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+      }
+
+      <!-- ════════════════ CONSULTATION TAB ════════════════ -->
+      @if (tab() === 'consultation' && selectedAppt()) {
+        <div class="dr-consult-panel">
+
+          <div class="dr-consult-header">
+            <button class="dr-btn-back" (click)="backFromConsultation()">← Back</button>
+            <div class="dr-consult-patient-info">
+              <div class="dr-pat-avatar">
+                {{ selectedAppt()!.patientFullName.split(' ')[0][0] }}{{ selectedAppt()!.patientFullName.split(' ')[1]?.[0] ?? '' }}
+              </div>
+              <div>
+                <div class="dr-consult-patient">{{ selectedAppt()!.patientFullName }}</div>
+                <div class="dr-consult-date">{{ formatDate(selectedAppt()!.dateTime) }}</div>
+              </div>
+            </div>
+          </div>
+
+          @if (loadingConsult()) {
+            <div class="dr-empty">Loading consultation...</div>
+          } @else {
+
+            @if (consultError()) { <div class="dr-alert error">⚠ {{ consultError() }}</div> }
+            @if (consultOk())    { <div class="dr-alert success">✔ {{ consultOk() }}</div> }
+
+            <!-- Notes form -->
+            <div class="dr-form-card">
+              <div class="dr-form-title">📋 Consultation Notes</div>
+              <div class="dr-form-field">
+                <label>Diagnostic</label>
+                <textarea rows="3" [value]="diagnostic()" (input)="diagnostic.set($any($event.target).value)" placeholder="Diagnostic..."></textarea>
+              </div>
+              <div class="dr-form-field">
+                <label>Observations</label>
+                <textarea rows="3" [value]="observations()" (input)="observations.set($any($event.target).value)" placeholder="Observations..."></textarea>
+              </div>
+              <div class="dr-form-field">
+                <label>Treatment Plan</label>
+                <textarea rows="2" [value]="treatment()" (input)="treatment.set($any($event.target).value)" placeholder="Treatment..."></textarea>
+              </div>
+              <button class="dr-btn-save" (click)="saveConsultation()" [disabled]="savingConsult()">
+                {{ savingConsult() ? 'Saving...' : (consultation() ? '✔ Update' : '✔ Create Consultation') }}
+              </button>
+            </div>
+
+            @if (consultation()) {
+
+              <!-- Prescriptions -->
+              <div class="dr-form-card">
+                <div class="dr-section-header">
+                  <span>💊 Prescriptions ({{ consultation()!.prescriptions.length }})</span>
+                  <button class="dr-btn-add" (click)="showRxForm.update(v=>!v)">+ Add</button>
+                </div>
+                @if (showRxForm()) {
+                  <div class="dr-inline-form">
+                    <input placeholder="Medication *" [value]="rxMed()" (input)="rxMed.set($any($event.target).value)" />
+                    <input placeholder="Dosage * (e.g. 500mg)" [value]="rxDosage()" (input)="rxDosage.set($any($event.target).value)" />
+                    <input placeholder="Frequency * (2x/day)" [value]="rxFreq()" (input)="rxFreq.set($any($event.target).value)" />
+                    <input placeholder="Duration * (7 days)" [value]="rxDuration()" (input)="rxDuration.set($any($event.target).value)" />
+                    <input placeholder="Notes (optional)" [value]="rxNotes()" (input)="rxNotes.set($any($event.target).value)" />
+                    <button class="dr-btn-save" (click)="addPrescription()" [disabled]="savingRx()">
+                      {{ savingRx() ? 'Saving...' : 'Add' }}
+                    </button>
+                  </div>
+                }
+                @for (rx of consultation()!.prescriptions; track rx.id) {
+                  <div class="dr-rx-item">
+                    💊 <strong>{{ rx.medication }}</strong> — {{ rx.dosage }}, {{ rx.frequency }}, {{ rx.duration }}
+                    @if (rx.notes) { · <em>{{ rx.notes }}</em> }
+                  </div>
+                }
+                @if (consultation()!.prescriptions.length === 0 && !showRxForm()) {
+                  <div class="dr-empty-small">No prescriptions yet.</div>
+                }
+              </div>
+
+              <!-- Lab Orders -->
+              <div class="dr-form-card">
+                <div class="dr-section-header">
+                  <span>🔬 Lab Orders ({{ consultation()!.labOrders.length }})</span>
+                  <button class="dr-btn-add" (click)="showLabForm.update(v=>!v)">+ Add</button>
+                </div>
+                @if (showLabForm()) {
+                  <div class="dr-inline-form">
+                    <input placeholder="Analysis type * (e.g. Blood test)" [value]="labType()" (input)="labType.set($any($event.target).value)" />
+                    <input placeholder="Notes (optional)" [value]="labNotes()" (input)="labNotes.set($any($event.target).value)" />
+                    <button class="dr-btn-save" (click)="addLabOrder()" [disabled]="savingLab()">
+                      {{ savingLab() ? 'Saving...' : 'Add' }}
+                    </button>
+                  </div>
+                }
+                @for (lo of consultation()!.labOrders; track lo.id) {
+                  <div class="dr-rx-item">
+                    🔬 <strong>{{ lo.analysisType }}</strong>
+                    <span class="dr-status-pill" [class]="labStatusClass(lo.status)" style="margin-left:8px">{{ lo.status }}</span>
+                    @if (lo.notes) { · <em>{{ lo.notes }}</em> }
+                  </div>
+                }
+                @if (consultation()!.labOrders.length === 0 && !showLabForm()) {
+                  <div class="dr-empty-small">No lab orders yet.</div>
+                }
+              </div>
+
+            }
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Chat flottant SignalR ───────────────────────────── -->
+<app-chat-popup />

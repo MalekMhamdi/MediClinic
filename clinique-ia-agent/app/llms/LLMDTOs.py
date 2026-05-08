@@ -12,19 +12,20 @@ class OrientationResult(BaseModel):
         "Cardiologie", "Neurologie", "Pneumologie",
         "Gastro-entérologie", "Dermatologie", "Orthopédie",
         "ORL", "Médecine générale", "Urgences",
-    ] = Field(description="Spécialité médicale recommandée")
-    urgency: Literal["faible", "moyen", "élevé"] = Field(description="Niveau d'urgence")
-    urgency_reason: str = Field(description="Explication du niveau d'urgence")
-    response_to_patient: str = Field(description="Message rassurant pour le patient. Max 3 phrases.")
+    ] = Field(description="Medical specialty recommended")
+    urgency: Literal["low", "medium", "high"] = Field(description="Urgency level")
+    urgency_reason: str = Field(description="Short explanation of the urgency level — written in the patient's language")
+    response_to_patient: str = Field(description="Reassuring message to patient. Max 3 sentences — written in the patient's language")
     recommended_action: Literal[
-        "salle_attente", "urgences_immediat", "consultation_programmee",
-    ] = Field(description="Action recommandée")
+        "waiting_room", "emergency", "scheduled_consultation",
+    ] = Field(description="Recommended action")
 
 
 class OrientationRequest(BaseModel):
     session_id: str = Field(description="Identifiant unique de session")
     user_message: str = Field(default="", description="Message du patient", max_length=2000)
     language: Optional[str] = Field(default="fr", description="Langue : fr / ar / en")
+    patient_name: Optional[str] = Field(default=None, description="Nom du patient connecté")
 
     @field_validator("user_message")
     @classmethod

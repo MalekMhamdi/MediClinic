@@ -3,7 +3,8 @@
     "allow": [
       "Bash(netstat -ano)",
       "Bash(taskkill /PID 18904 /F)",
-      "PowerShell(Stop-Process -Id 18904 -Force)"
+      "PowerShell(Stop-Process -Id 18904 -Force)",
+      "PowerShell(taskkill /PID 27228 /F 2>&1; taskkill /PID 22432 /F 2>&1; Start-Sleep 2; $check = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue; if \\($check\\) { Write-Output \"Still in use by PID $\\($check.OwningProcess\\)\" } else { Write-Output \"Port 8000 is FREE\" })"
     ]
   }
 }

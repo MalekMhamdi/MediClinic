@@ -1,0 +1,138 @@
+<div class="auth-shell">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="auth-side">
+    <div class="auth-side-content">
+      <div class="auth-logo">
+        <div class="auth-logo-icon"><div class="auth-cross"></div></div>
+        <span class="auth-logo-text">MediClinic</span>
+      </div>
+      <h1 class="auth-side-title">
+        Your health,<br>our priority.
+      </h1>
+      <p class="auth-side-sub">
+        Secure access for patients, doctors, administrators
+        and laboratory technicians.
+      </p>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="auth-feature-icon">📅</div>
+          <div>Online appointment scheduling</div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">📋</div>
+          <div>Access to medical records</div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">🔔</div>
+          <div>Personalized notifications</div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">🔒</div>
+          <div>Secure & confidential data</div>
+        </div>
+      </div>
+    </div>
+    <div class="auth-side-decor"></div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="auth-form-side">
+    <div class="auth-form-card">
+
+      <div class="auth-form-header">
+        <h2 class="auth-form-title">Sign In</h2>
+        <p class="auth-form-sub">Select your role and enter your credentials</p>
+      </div>
+
+      <!-- Role selector -->
+      <div class="auth-role-label">I am a</div>
+      <div class="auth-roles">
+        @for (role of roles; track role.value) {
+          <div class="auth-role-card"
+            [class.active]="selectedRole() === role.value"
+            (click)="selectRole(role.value)">
+            <div class="auth-role-icon">{{ role.icon }}</div>
+            <div class="auth-role-name">{{ role.label }}</div>
+            <div class="auth-role-desc">{{ role.description }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- Active role banner -->
+      <div class="auth-role-banner">
+        <span class="auth-role-banner-icon">{{ activeRole.icon }}</span>
+        Signing in as <strong>{{ activeRole.label }}</strong>
+      </div>
+
+      <!-- Error -->
+      @if (error()) {
+        <div class="auth-error">⚠ {{ error() }}</div>
+      }
+
+      <!-- Email -->
+      <div class="auth-field">
+        <label class="auth-label">Email address</label>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">✉</span>
+          <input
+            type="email"
+            class="auth-input"
+            placeholder="you@example.com"
+            [value]="email()"
+            (input)="email.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="auth-field">
+        <div class="auth-label-row">
+          <label class="auth-label">Password</label>
+          <a class="auth-forgot" href="#">Forgot password?</a>
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">🔒</span>
+          <input
+            [type]="showPwd() ? 'text' : 'password'"
+            class="auth-input"
+            placeholder="••••••••"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+          />
+          <button class="auth-eye-btn" type="button" (click)="togglePwd()">
+            {{ showPwd() ? '🙈' : '👁' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button
+        class="auth-submit"
+        [class.loading]="loading()"
+        [disabled]="loading()"
+        (click)="submit()">
+        @if (loading()) {
+          <span class="auth-spinner"></span> Signing in...
+        } @else {
+          Sign In as {{ activeRole.label }} →
+        }
+      </button>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      @if (selectedRole() === 'patient') {
+        <p class="auth-switch">
+          Don't have an account?
+          <a routerLink="/register" class="auth-switch-link">Create account</a>
+        </p>
+      } @else {
+        <p class="auth-switch" style="text-align:center;color:#6b7a99;font-size:13px;">
+          🔒 Account access is managed by the clinic administrator.
+        </p>
+      }
+
+    </div>
+  </div>
+
+</div>

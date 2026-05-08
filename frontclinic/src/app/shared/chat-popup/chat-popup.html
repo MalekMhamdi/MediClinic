@@ -1,0 +1,146 @@
+<!-- ── ALERTE NOUVEAU MESSAGE ────────────────────────────────── -->
+@if (newMsgAlert()) {
+  <div class="cp-alert" (click)="openFromAlert(newMsgAlert()!)">
+    <div class="cp-alert-avatar">{{ newMsgAlert()!.senderName[0] }}</div>
+    <div class="cp-alert-body">
+      <div class="cp-alert-name">{{ newMsgAlert()!.senderName }}</div>
+      <div class="cp-alert-text">{{ newMsgAlert()!.content }}</div>
+    </div>
+    <button class="cp-alert-close" (click)="chat.newMsgAlert.set(null); $event.stopPropagation()">×</button>
+  </div>
+}
+
+<!-- ── BOUTON FLOTTANT ────────────────────────────────────────── -->
+<button class="cp-fab" (click)="toggleOpen()" title="Messages">
+  💬
+  @if (unreadTotal() > 0) {
+    <span class="cp-fab-badge">{{ unreadTotal() > 9 ? '9+' : unreadTotal() }}</span>
+  }
+</button>
+
+<!-- ── FENÊTRE CHAT ───────────────────────────────────────────── -->
+@if (isOpen()) {
+  <div class="cp-window">
+
+    <!-- Header -->
+    <div class="cp-header">
+      @if (activeId()) {
+        <button class="cp-back" (click)="backToContacts()">←</button>
+        <div class="cp-header-info">
+          <span class="cp-header-name">
+            {{ roleIcon(activeContact?.role ?? '') }} {{ activeContact?.fullName ?? '…' }}
+          </span>
+          <span class="cp-header-role">{{ activeContact?.role }}</span>
+        </div>
+      } @else {
+        <span class="cp-header-title">💬 Messages</span>
+      }
+      <button class="cp-close" (click)="isOpen.set(false)">×</button>
+    </div>
+
+    <!-- ── LISTE CONTACTS ──────────────────────────────────────── -->
+    @if (!activeId()) {
+      <div class="cp-contacts">
+        @if (contacts().length === 0) {
+          <div class="cp-empty">
+            No conversations yet.<br>
+            <small>Contacts appear from your appointments.</small>
+          </div>
+        }
+
+        @for (c of contacts(); track c.userId) {
+          <div class="cp-contact" (click)="openChat(c)">
+            <div class="cp-contact-avatar">{{ c.fullName[0] }}</div>
+
+            <div class="cp-contact-info">
+              <div class="cp-contact-name">
+                {{ roleIcon(c.role) }} {{ c.fullName }}
+              </div>
+              <div class="cp-contact-last">
+                {{ c.lastMessage ?? 'Démarrer une conversation…' }}
+              </div>
+            </div>
+
+            <div class="cp-contact-right">
+              @if (c.unreadCount > 0) {
+                <span class="cp-unread-badge">{{ c.unreadCount }}</span>
+              }
+              <div class="cp-contact-time">{{ formatAgo(c.lastMessageAt) }}</div>
+
+              <!-- Bouton supprimer conversation -->
+              @if (c.lastMessage) {
+                <button class="cp-del-conv-btn"
+                  title="Supprimer la conversation"
+                  (click)="askDeleteConversation(c.userId, $event)">🗑</button>
+              }
+            </div>
+          </div>
+
+          <!-- Confirmation suppression -->
+          @if (confirmDel() === c.userId) {
+            <div class="cp-del-confirm">
+              <span>Supprimer cette conversation ?</span>
+              <button class="cp-del-yes" (click)="confirmDeleteConversation(c.userId)">Oui</button>
+              <button class="cp-del-no"  (click)="cancelDelete()">Non</button>
+            </div>
+          }
+        }
+      </div>
+    }
+
+    <!-- ── CONVERSATION ────────────────────────────────────────── -->
+    @if (activeId()) {
+      <div class="cp-messages">
+        @if (messages().length === 0) {
+          <div class="cp-empty">Écrivez votre premier message ✉</div>
+        }
+
+        @for (m of messages(); track m.id) {
+          <div class="cp-msg-row" [class.mine]="isMine(m.senderId)"
+               (mouseenter)="hoveredMsg.set(m.id)"
+               (mouseleave)="hoveredMsg.set(null)">
+
+            @if (!isMine(m.senderId)) {
+              <div class="cp-msg-avatar">{{ m.senderName[0] }}</div>
+            }
+
+            <div class="cp-msg-bubble" [class.mine]="isMine(m.senderId)">
+              <div class="cp-msg-text">{{ m.content }}</div>
+              <div class="cp-msg-meta">
+                {{ formatTime(m.sentAt) }}
+                @if (isMine(m.senderId) && m.isRead) {
+                  <span class="cp-read">✓✓</span>
+                }
+              </div>
+            </div>
+
+            @if (hoveredMsg() === m.id) {
+              <button class="cp-delete-msg"
+                title="Supprimer ce message"
+                (click)="deleteMsg(m.id)">🗑</button>
+            }
+
+          </div>
+        }
+      </div>
+
+      <!-- Input -->
+      <div class="cp-input-row">
+        <textarea
+          class="cp-input"
+          rows="1"
+          placeholder="Écrire un message… (Entrée pour envoyer)"
+          [value]="newMsg()"
+          (input)="newMsg.set($any($event.target).value)"
+          (keydown)="handleKey($event)">
+        </textarea>
+        <button class="cp-send"
+          (click)="sendMessage()"
+          [disabled]="!newMsg().trim() || sending()">
+          {{ sending() ? '…' : '➤' }}
+        </button>
+      </div>
+    }
+
+  </div>
+}

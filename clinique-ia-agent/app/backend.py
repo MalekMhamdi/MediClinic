@@ -181,7 +181,7 @@ async def orientation(request: OrientationRequest):
     loop = asyncio.get_event_loop()
     output = await loop.run_in_executor(
         None,
-        lambda: llm_logic.process_message(history, request.user_message, language=request.language)
+        lambda: llm_logic.process_message(history, request.user_message, language=request.language, patient_name=request.patient_name)
     )
 
     if request.user_message:

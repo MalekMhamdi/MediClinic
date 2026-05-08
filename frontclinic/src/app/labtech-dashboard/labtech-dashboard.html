@@ -1,0 +1,245 @@
+<div class="lt-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="lt-sidebar">
+    <div class="lt-logo">
+      <div class="lt-logo-icon">🔬</div>
+      <div>
+        <div class="lt-logo-text">MediClinic</div>
+        <div class="lt-logo-sub">Lab Portal</div>
+      </div>
+    </div>
+
+    <div class="lt-user-card">
+      <div class="lt-avatar">{{ initials }}</div>
+      <div>
+        <div class="lt-user-name">{{ auth.userName }}</div>
+        <div class="lt-user-role">Lab Technician</div>
+      </div>
+    </div>
+
+    <div class="lt-nav">
+      <div class="lt-nav-section">Laboratory</div>
+      <a class="lt-nav-item" [class.active]="tab() === 'orders'" (click)="setTab('orders')">
+        <span>📋</span> Lab Orders
+        @if (pendingCount() > 0) {
+          <span class="lt-badge">{{ pendingCount() }}</span>
+        }
+      </a>
+      <a class="lt-nav-item" [class.active]="tab() === 'results'" (click)="setTab('results')">
+        <span>📄</span> My Results
+      </a>
+      <div class="lt-nav-section" style="margin-top:8px">Account</div>
+      <a class="lt-nav-item" [class.active]="tab() === 'profile'" (click)="setTab('profile')">
+        <span>⚙️</span> My Profile
+      </a>
+    </div>
+
+    <div class="lt-sidebar-footer">
+      <div class="lt-logout" (click)="logout()"><span>→</span> Sign Out</div>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="lt-main">
+
+    <div class="lt-topbar">
+      <div>
+        <div class="lt-topbar-title">
+          @if (tab() === 'orders')  { Lab Orders }
+          @else if (tab() === 'results') { My Results }
+          @else { My Profile }
+        </div>
+        <div class="lt-topbar-sub">{{ today }}</div>
+      </div>
+    </div>
+
+    <div class="lt-content">
+
+      @if (error()) { <div class="lt-alert error">⚠ {{ error() }}</div> }
+      @if (submitOk()) { <div class="lt-alert success">✔ {{ submitOk() }}</div> }
+
+      <!-- ════ ORDERS TAB ════ -->
+      @if (tab() === 'orders') {
+
+        <!-- Filter chips -->
+        <div class="lt-filters">
+          @for (f of [['All','All'],['Pending','Pending'],['Done','Done'],['InProgress','In Progress']]; track f[0]) {
+            <button class="lt-chip" [class.active]="statusFilter() === f[0]"
+              (click)="statusFilter.set($any(f[0]))">
+              {{ f[1] }}
+              @if (f[0] !== 'All') {
+                <span>({{ allOrders().filter(o => o.status === f[0]).length }})</span>
+              }
+            </button>
+          }
+        </div>
+
+        @if (loading()) {
+          <div class="lt-empty">Loading orders...</div>
+        } @else if (filtered().length === 0) {
+          <div class="lt-empty">📭 No orders in this category.</div>
+        } @else {
+          @for (order of filtered(); track order.id) {
+
+            <div class="lt-order-card"
+              [class.selected]="selectedOrder()?.id === order.id"
+              [class.border-pending]="order.status === 'Pending'"
+              [class.border-done]="order.status === 'Done'"
+              [class.border-inprogress]="order.status === 'InProgress'">
+
+              <!-- Card header -->
+              <div class="lt-order-header" (click)="selectOrder(order)">
+                <div class="lt-order-left">
+                  <div class="lt-order-type">🔬 {{ order.analysisType }}</div>
+                  <div class="lt-order-meta">
+                    <span>👤 {{ order.patientFullName }}</span>
+                    @if (order.patientCin) { <span>· CIN: {{ order.patientCin }}</span> }
+                  </div>
+                  @if (order.doctorFullName) {
+                    <div class="lt-order-doctor">
+                      🩺 Dr. {{ order.doctorFullName }}
+                      @if (order.doctorSpecialty) { <span>· {{ order.doctorSpecialty }}</span> }
+                    </div>
+                  }
+                  <div class="lt-order-date">📅 Ordered: {{ formatDate(order.orderedAt) }}</div>
+                  @if (order.doctorNotes) {
+                    <div class="lt-order-notes">📝 {{ order.doctorNotes }}</div>
+                  }
+                </div>
+                <div class="lt-order-right">
+                  <span class="lt-status {{ statusClass(order.status) }}">{{ statusLabel(order.status) }}</span>
+                  @if (order.status === 'Pending') {
+                    <span class="lt-expand-hint">{{ selectedOrder()?.id === order.id ? '▲ Close' : '▼ Submit result' }}</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Submit form (expanded) -->
+              @if (selectedOrder()?.id === order.id && order.status === 'Pending') {
+                <div class="lt-submit-form">
+                  @if (submitError()) { <div class="lt-alert error">⚠ {{ submitError() }}</div> }
+
+                  <div class="lt-form-field">
+                    <label>📎 PDF Report</label>
+                    <div class="lt-file-row">
+                      <label class="lt-file-btn" for="pdfInput">
+                        📂 Choose file
+                        <input id="pdfInput" type="file" accept=".pdf,.png,.jpg"
+                          (change)="onFileSelected($event)" style="display:none" />
+                      </label>
+                      <input class="lt-path-input" placeholder="or paste URL / path..."
+                        [value]="resultPdfPath()" (input)="resultPdfPath.set($any($event.target).value)" />
+                    </div>
+                    @if (selectedFile()) {
+                      <div class="lt-file-selected">✔ {{ selectedFile()!.name }}</div>
+                    }
+                  </div>
+
+                  <div class="lt-form-field">
+                    <label>💬 Medical Comment</label>
+                    <textarea rows="4" placeholder="Describe the analysis result..."
+                      [value]="resultComment()"
+                      (input)="resultComment.set($any($event.target).value)"></textarea>
+                  </div>
+
+                  <div class="lt-form-actions">
+                    <button class="lt-btn-cancel" (click)="selectedOrder.set(null)">Cancel</button>
+                    <button class="lt-btn-submit" (click)="submitResult()" [disabled]="submitting()">
+                      {{ submitting() ? 'Submitting...' : '✔ Submit Result' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+            </div>
+          }
+        }
+      }
+
+      <!-- ════ RESULTS TAB ════ -->
+      @if (tab() === 'results') {
+        @if (loading()) {
+          <div class="lt-empty">Loading results...</div>
+        } @else if (myResults().length === 0) {
+          <div class="lt-empty">📭 No results submitted yet.</div>
+        } @else {
+          @for (res of myResults(); track res.id) {
+            <div class="lt-result-card">
+              <div class="lt-result-header">
+                <div>
+                  <div class="lt-order-type">🔬 {{ res.analysisType }}</div>
+                  <div class="lt-order-meta">👤 {{ res.patientFullName }}</div>
+                  <div class="lt-order-date">📅 Submitted: {{ formatDate(res.submittedAt) }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="lt-status {{ statusClass(res.status) }}">{{ statusLabel(res.status) }}</span>
+                  <button class="lt-delete-btn" title="Delete result" (click)="deleteResult(res.id)">×</button>
+                </div>
+              </div>
+              @if (res.medicalComment) {
+                <div class="lt-result-comment">💬 {{ res.medicalComment }}</div>
+              }
+              @if (res.resultPdfPath) {
+                <div class="lt-result-pdf">
+                  <a [href]="res.resultPdfPath" target="_blank">📎 Download PDF</a>
+                </div>
+              }
+            </div>
+          }
+        }
+      }
+
+      <!-- ════ PROFILE TAB ════ -->
+      @if (tab() === 'profile') {
+        <div class="lt-profile-grid">
+
+          <div class="lt-form-card">
+            <div class="lt-form-title">👤 My Information</div>
+            @if (profOk())    { <div class="lt-alert success">✔ {{ profOk() }}</div> }
+            @if (profError()) { <div class="lt-alert error">⚠ {{ profError() }}</div> }
+            <div class="lt-form-field">
+              <label>First name</label>
+              <input [value]="profFirst()" (input)="profFirst.set($any($event.target).value)" placeholder="First name" />
+            </div>
+            <div class="lt-form-field">
+              <label>Last name</label>
+              <input [value]="profLast()" (input)="profLast.set($any($event.target).value)" placeholder="Last name" />
+            </div>
+            <div class="lt-form-field">
+              <label>Email</label>
+              <input [value]="profEmail()" disabled />
+              <small>Email cannot be changed here.</small>
+            </div>
+            <button class="lt-btn-submit" (click)="saveProfile()" [disabled]="savingProf()">
+              {{ savingProf() ? 'Saving...' : '✔ Save Changes' }}
+            </button>
+          </div>
+
+          <div class="lt-form-card">
+            <div class="lt-form-title">🔒 Change Password</div>
+            @if (pwdOk())    { <div class="lt-alert success">✔ {{ pwdOk() }}</div> }
+            @if (pwdError()) { <div class="lt-alert error">⚠ {{ pwdError() }}</div> }
+            <div class="lt-form-field">
+              <label>Current password</label>
+              <input type="password" [value]="curPwd()" (input)="curPwd.set($any($event.target).value)" />
+            </div>
+            <div class="lt-form-field">
+              <label>New password (min. 8 chars)</label>
+              <input type="password" [value]="newPwd()" (input)="newPwd.set($any($event.target).value)" />
+            </div>
+            <div class="lt-form-field">
+              <label>Confirm new password</label>
+              <input type="password" [value]="confPwd()" (input)="confPwd.set($any($event.target).value)" />
+            </div>
+            <button class="lt-btn-submit" (click)="changePassword()" [disabled]="savingPwd()">
+              {{ savingPwd() ? 'Saving...' : '🔒 Update Password' }}
+            </button>
+          </div>
+
+        </div>
+      }
+
+    </div>
+  </div>
+</div>
