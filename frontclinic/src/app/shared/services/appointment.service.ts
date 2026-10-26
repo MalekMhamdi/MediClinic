@@ -87,17 +87,32 @@ export class AppointmentService {
   async loadDoctors(): Promise<void> {
     try {
       const res = await firstValueFrom(this.http.get<any[]>(`${API}/Doctor`));
-      this.doctors.set(res.map(d => ({
+      const doctors = res.map(d => ({
         id: d.id.toString(),
         specialtyId: d.specialtyId.toString(),
         name: `Dr. ${d.firstName} ${d.lastName}`,
-        title: 'Specialist', // Add actual title mapping if exists
-        experience: 'N/A', // Update with actual data
-        rating: 5.0, // Update with actual data
+        title: 'Specialist',
+        experience: 'N/A',
+        rating: 0,
         reviews: 0,
         avatar: d.firstName[0] + d.lastName[0],
-        availableDays: [] // Update if this logic exists on backend
-      })));
+        availableDays: []
+      }));
+      this.doctors.set(doctors);
+
+      // Fetch real ratings in parallel (non-blocking)
+      const ratings = await Promise.allSettled(
+        doctors.map(d =>
+          firstValueFrom(this.http.get<any>(`${API}/DoctorReview/doctor/${d.id}`))
+        )
+      );
+      this.doctors.set(doctors.map((d, i) => {
+        const r = ratings[i];
+        if (r.status === 'fulfilled') {
+          return { ...d, rating: r.value.averageRating ?? 0, reviews: r.value.totalReviews ?? 0 };
+        }
+        return d;
+      }));
     } catch (err) {
       console.error('Failed to load doctors', err);
     }
@@ -109,8 +124,10 @@ export class AppointmentService {
 
   async getAvailableSlots(doctorId: string, date: string): Promise<TimeSlot[]> {
     try {
+      const patientId = this.auth.userId;
+      const pid = patientId ? `&patientId=${patientId}` : '';
       const res = await firstValueFrom(
-        this.http.get<string[]>(`${API}/Appointment/available-slots?doctorId=${doctorId}&date=${date}`)
+        this.http.get<string[]>(`${API}/Appointment/available-slots?doctorId=${doctorId}&date=${date}${pid}`)
       );
       
       const allSlots = [
@@ -179,6 +196,29 @@ export class AppointmentService {
 
   async deleteAppointment(id: string): Promise<void> {
     await firstValueFrom(this.http.delete(`${API}/Appointment/${id}`));
+  }
+
+  // ── Reviews ───────────────────────────────────────────────────────────
+  async canReview(appointmentId: number): Promise<{ canReview: boolean; reason: string | null }> {
+    return firstValueFrom(
+      this.http.get<any>(`${API}/DoctorReview/can-review/${appointmentId}`)
+    );
+  }
+
+  async submitReview(appointmentId: number, rating: number, comment: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${API}/DoctorReview`, { appointmentId, rating, comment: comment || null })
+    );
+  }
+
+  async getDoctorRating(doctorId: number): Promise<{ averageRating: number; totalReviews: number; reviews: any[] }> {
+    return firstValueFrom(
+      this.http.get<any>(`${API}/DoctorReview/doctor/${doctorId}`)
+    );
+  }
+
+  async getMyReviews(): Promise<any[]> {
+    return firstValueFrom(this.http.get<any[]>(`${API}/DoctorReview/my`));
   }
 
   async rescheduleAppointment(id: string, newDate: string, newTime: string): Promise<void> {

@@ -41,6 +41,11 @@ public static class ServiceRegistration
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<ILabTechRepository, LabTechRepository>();
         services.AddScoped<IChatRepository, ChatRepository>();
+        services.AddScoped<IDoctorReviewRepository, DoctorReviewRepository>();
+
+        // ───────────── EMAIL ─────────────
+        services.AddSingleton<IEmailService, EmailService>();
+
         return services;
     }
 }

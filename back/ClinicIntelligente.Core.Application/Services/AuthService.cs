@@ -129,7 +129,17 @@ public class AuthService(
             ?? throw new KeyNotFoundException("Utilisateur introuvable.");
 
         user.FirstName = dto.FirstName;
-        user.LastName = dto.LastName;
+        user.LastName  = dto.LastName;
+
+        // Update email if provided and different
+        if (!string.IsNullOrWhiteSpace(dto.Email) &&
+            !dto.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            if (await userRepo.ExistsByEmailAsync(dto.Email))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use.");
+            user.Email = dto.Email.Trim().ToLower();
+        }
+
         user.LastModifiedAt = DateTime.UtcNow;
 
         switch (user)

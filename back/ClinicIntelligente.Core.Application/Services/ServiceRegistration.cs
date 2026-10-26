@@ -29,6 +29,7 @@ public static class ServiceRegistration
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IDoctorReviewService, DoctorReviewService>();
         services.AddHttpClient<IAiOrientationService, AiOrientationService>();
 
         return services;

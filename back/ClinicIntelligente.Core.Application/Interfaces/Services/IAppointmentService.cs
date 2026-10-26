@@ -11,7 +11,7 @@ public interface IAppointmentService
     Task<IReadOnlyList<AppointmentDto>> GetByPatientIdAsync(int patientId, string? statusFilter = null);
     Task<IReadOnlyList<AppointmentDto>> GetByDoctorIdAsync(int doctorId, string? statusFilter = null);
     Task<AppointmentDto?> GetByIdAsync(int id);
-    Task<IReadOnlyList<string>> GetAvailableSlotsAsync(int doctorId, DateTime date);
+    Task<IReadOnlyList<string>> GetAvailableSlotsAsync(int doctorId, DateTime date, int? patientId = null);
     Task<AppointmentDto> CreateAsync(CreateAppointmentDto dto);
 
     // Doctor actions

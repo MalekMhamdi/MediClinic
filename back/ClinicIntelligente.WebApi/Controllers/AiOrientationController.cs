@@ -56,8 +56,8 @@ public class AiOrientationController : ControllerBase
             return BadRequest(new { error = "No file provided." });
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (ext is not (".pdf" or ".png" or ".jpg" or ".jpeg"))
-            return BadRequest(new { error = "Unsupported format. Use PDF, PNG or JPG." });
+        if (ext is not (".pdf" or ".png" or ".jpg" or ".jpeg" or ".webp"))
+            return BadRequest(new { error = "Unsupported format. Use PDF, PNG, JPG or WebP." });
 
         await using var stream = file.OpenReadStream();
         var result = await _service.UploadContextAsync(

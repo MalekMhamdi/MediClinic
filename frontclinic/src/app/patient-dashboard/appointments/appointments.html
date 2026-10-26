@@ -37,10 +37,10 @@
 
 <!-- Cards -->
 @if (!loading() && !error()) {
-  @for (apt of filtered; track apt.id) {
-    <div class="apt-card">
+  @for (apt of pagedFiltered(); track apt.id) {
+    <div class="apt-card" [class.apt-card-completed]="apt.status === 'completed'">
 
-      <div class="apt-date" [class.amber]="apt.status === 'pending'">
+      <div class="apt-date" [class.amber]="apt.status === 'pending'" [class.green]="apt.status === 'completed'">
         <div class="apt-month">{{ apt.date | date:'MMM' }}</div>
         <div class="apt-day">{{ apt.date | date:'dd' }}</div>
         <div class="apt-year">{{ apt.date | date:'yyyy' }}</div>
@@ -53,6 +53,9 @@
           <span>🕐 {{ apt.time }}</span>
           <span>🏥 {{ apt.specialty }}</span>
         </div>
+        @if (apt.status === 'completed' && apt.hasReview) {
+          <div class="apt-reviewed-badge">⭐ Review submitted</div>
+        }
       </div>
 
       <span class="apt-status" [ngClass]="apt.status">{{ statusLabel(apt.status) }}</span>
@@ -61,6 +64,9 @@
         @if (apt.status === 'confirmed' || apt.status === 'pending') {
           <button class="apt-btn-outline danger" (click)="cancel(apt.id)">Cancel</button>
         }
+        @if (apt.status === 'completed' && !apt.hasReview) {
+          <button class="apt-btn-rate" (click)="openReview(apt)">⭐ Rate Doctor</button>
+        }
         @if (apt.status === 'cancelled' || apt.status === 'refused') {
           <button class="apt-btn-outline danger" (click)="deleteAppt(apt.id)">🗑 Delete</button>
         }
@@ -68,4 +74,88 @@
 
     </div>
   }
+
+  <app-pagination
+    [total]="filtered.length"
+    [pageSize]="PAGE_SIZE"
+    [page]="page()"
+    (pageChange)="page.set($event)">
+  </app-pagination>
+}
+
+<!-- ═══ REVIEW MODAL ═══ -->
+@if (reviewTarget()) {
+  <div class="apt-overlay" (click)="closeReview()">
+    <div class="apt-review-modal" (click)="$event.stopPropagation()">
+
+      @if (reviewDone()) {
+        <!-- Success state -->
+        <div class="apt-review-success">
+          <div class="apt-review-success-icon">🎉</div>
+          <div class="apt-review-success-title">Thank you for your review!</div>
+          <div class="apt-review-success-sub">Your feedback helps other patients.</div>
+          <button class="apt-btn-primary" (click)="closeReview()">Close</button>
+        </div>
+      } @else {
+        <!-- Rating form -->
+        <div class="apt-review-header">
+          <div class="apt-review-doctor-avatar">
+            {{ reviewTarget()!.doctor.charAt(4) }}{{ reviewTarget()!.doctor.split(' ')[2]?.[0] ?? '' }}
+          </div>
+          <div>
+            <div class="apt-review-doctor-name">{{ reviewTarget()!.doctor }}</div>
+            <div class="apt-review-specialty">{{ reviewTarget()!.specialty }}</div>
+          </div>
+        </div>
+
+        <div class="apt-review-label">How was your consultation?</div>
+
+        <!-- Stars -->
+        <div class="apt-stars-row">
+          @for (s of stars; track s) {
+            <span
+              [class]="starClass(s)"
+              (mouseenter)="hoveredStar.set(s)"
+              (mouseleave)="hoveredStar.set(0)"
+              (click)="reviewRating.set(s)">
+              ★
+            </span>
+          }
+        </div>
+        <div class="apt-star-label">
+          @switch (reviewRating()) {
+            @case (1) { 😟 Poor }
+            @case (2) { 😕 Fair }
+            @case (3) { 🙂 Good }
+            @case (4) { 😊 Very good }
+            @case (5) { 🤩 Excellent }
+            @default  { Click a star to rate }
+          }
+        </div>
+
+        <!-- Comment -->
+        <textarea
+          class="apt-review-comment"
+          rows="3"
+          placeholder="Share your experience (optional)..."
+          [value]="reviewComment()"
+          (input)="reviewComment.set($any($event.target).value)">
+        </textarea>
+
+        @if (reviewError()) {
+          <div class="apt-review-error">⚠ {{ reviewError() }}</div>
+        }
+
+        <div class="apt-review-actions">
+          <button class="apt-btn-outline" (click)="closeReview()">Cancel</button>
+          <button class="apt-btn-primary"
+            [disabled]="reviewRating() < 1 || reviewSaving()"
+            (click)="submitReview()">
+            {{ reviewSaving() ? 'Submitting...' : '✔ Submit Review' }}
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
 }

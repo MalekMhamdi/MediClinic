@@ -57,6 +57,10 @@
 .ad-kpi.red    .ad-kpi-num { color: #e74c3c; }
 .ad-kpi.teal   .ad-kpi-num { color: #1abc9c; }
 .ad-kpi.orange .ad-kpi-num { color: #e67e22; }
+.ad-kpi-clickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.ad-kpi-clickable:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.ad-kpi-hint { font-size: 10px; color: #aab4cc; margin-top: 6px; opacity: 0; transition: opacity .15s; }
+.ad-kpi-clickable:hover .ad-kpi-hint { opacity: 1; }
 
 /* ── Charts ─────────────────────────────────────────────────── */
 .ad-charts-row { display: flex; gap: 20px; flex-wrap: wrap; }
@@ -72,9 +76,19 @@
 .ad-sp-chart { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
 .ad-sp-row   { display: flex; align-items: center; gap: 10px; }
 .ad-sp-name  { font-size: 12px; color: var(--navy); width: 120px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ad-sp-bar-wrap { flex: 1; height: 10px; background: var(--light); border-radius: 5px; overflow: hidden; }
+.ad-sp-bar-wrap { flex: 1; height: 10px; background: var(--light); border-radius: 5px; overflow: hidden; position: relative; }
 .ad-sp-bar   { height: 100%; background: var(--green); border-radius: 5px; }
-.ad-sp-count { font-size: 12px; font-weight: 700; color: var(--navy); width: 28px; text-align: right; }
+.ad-sp-bar-doctor  { height: 100%; background: #3498db; border-radius: 5px; position: absolute; left: 0; top: 0; transition: width .4s; }
+.ad-sp-bar-consult { height: 60%; background: var(--green); border-radius: 5px; position: absolute; left: 0; top: 20%; transition: width .4s; opacity: .75; }
+.ad-sp-count { font-size: 12px; font-weight: 700; color: var(--navy); width: 52px; text-align: right; display: flex; gap: 4px; align-items: center; justify-content: flex-end; }
+.ad-sp-consult-badge { font-size: 10px; color: var(--green); font-weight: 700; }
+.ad-sp-row-clickable { cursor: pointer; border-radius: 6px; padding: 3px 4px; transition: background .15s; }
+.ad-sp-row-clickable:hover { background: rgba(11,45,92,.06); }
+.ad-chart-hint { font-size: 10px; color: #aab4cc; font-weight: 400; margin-left: 6px; }
+.ad-chart-legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--gray); margin-top: 10px; }
+.ad-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ad-legend-dot.blue  { background: #3498db; }
+.ad-legend-dot.green { background: var(--green); }
 
 /* ── Users toolbar ──────────────────────────────────────────── */
 .ad-toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -91,6 +105,24 @@
 .ad-cell-name  { font-weight: 600; color: var(--navy); }
 .ad-cell-email { color: var(--gray); font-size: 12px; }
 .ad-cell-date  { font-size: 12px; color: var(--gray); }
+
+/* ── Appointments table ─────────────────────────────────────── */
+.ad-appt-thead { display: grid; grid-template-columns: 80px 1.4fr 1.4fr 1fr 1.2fr 100px 90px; gap: 12px; padding: 12px 18px; background: var(--light); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--gray); border-bottom: 1px solid var(--border); border-radius: 14px 14px 0 0; }
+.ad-appt-row  { display: grid; grid-template-columns: 80px 1.4fr 1.4fr 1fr 1.2fr 100px 90px; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); align-items: center; font-size: 13px; transition: background .15s; }
+.ad-appt-row:last-child { border-bottom: none; }
+.ad-appt-row:hover { background: var(--light); }
+.ad-appt-date { display: flex; flex-direction: column; }
+.ad-appt-day  { font-size: 12px; font-weight: 700; color: var(--navy); }
+.ad-appt-time { font-size: 11px; color: var(--gray); }
+.ad-cell-reason { font-size: 12px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-spec-pill   { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; background: #ebf5fb; color: #2980b9; white-space: nowrap; }
+.ad-appt-status.pending   { background: #fff8e1; color: #e67e22; }
+.ad-appt-status.confirmed { background: #eafaf1; color: var(--green); }
+.ad-appt-status.completed { background: #ebf5fb; color: #2980b9; }
+.ad-appt-status.cancelled { background: #fdf2f2; color: #e74c3c; }
+.ad-consult-badge { font-size: 11px; font-weight: 700; color: var(--green); }
+.ad-consult-empty { font-size: 12px; color: #ccc; }
+.ad-toolbar-count { font-size: 12px; color: var(--gray); align-self: center; white-space: nowrap; }
 
 /* ── Pills ──────────────────────────────────────────────────── */
 .ad-role-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }

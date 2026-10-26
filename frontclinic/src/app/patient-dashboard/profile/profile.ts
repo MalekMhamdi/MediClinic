@@ -118,24 +118,38 @@ export class ProfileComponent implements OnInit {
       this.error.set('First name and last name are required.');
       return;
     }
+    if (this.draft.email.trim()) {
+      const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRx.test(this.draft.email.trim())) {
+        this.error.set('Please enter a valid email address.');
+        return;
+      }
+    }
     this.saving.set(true);
     this.error.set('');
     try {
       await firstValueFrom(this.http.put(`${API}/Auth/profile`, {
         firstName:  this.draft.firstName.trim(),
         lastName:   this.draft.lastName.trim(),
-        phone:      this.draft.phone      || null,
-        bloodGroup: this.draft.bloodGroup || null,
-        address:    this.draft.address    || null,
+        email:      this.draft.email.trim()    || null,
+        phone:      this.draft.phone           || null,
+        bloodGroup: this.draft.bloodGroup      || null,
+        address:    this.draft.address         || null,
         emergencyContactName:     this.draft.emergencyContactName     || null,
         emergencyContactRelation: this.draft.emergencyContactRelation || null,
         emergencyContactPhone:    this.draft.emergencyContactPhone    || null,
       }));
-      // Update display signal from saved draft
+      const emailChanged = this.draft.email.trim().toLowerCase() !== this.profile().email.toLowerCase();
       this.profile.set({ ...this.draft });
       this.editing.set(false);
-      this.success.set('Profile updated successfully.');
-      setTimeout(() => this.success.set(''), 4000);
+
+      if (emailChanged) {
+        this.success.set('Profile updated. Your email has changed — please log in again with your new address.');
+        setTimeout(() => this.auth.logout(), 3000);
+      } else {
+        this.success.set('Profile updated successfully.');
+        setTimeout(() => this.success.set(''), 4000);
+      }
     } catch (e: any) {
       this.error.set(e?.error?.message ?? 'Failed to update profile. Please try again.');
     } finally {

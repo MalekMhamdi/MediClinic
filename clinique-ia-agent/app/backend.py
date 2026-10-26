@@ -4,8 +4,11 @@ import time
 import asyncio
 import logging
 import io
+import base64 as _b64
 from contextlib import asynccontextmanager
 from typing import Optional
+
+import httpx as _httpx
 
 from fastapi import FastAPI, HTTPException, Request, Depends, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,7 +26,7 @@ from app.llms.LLMDTOs import (
 from app.llms.clinic_llm_logic import ClinicLLMLogic
 from app.queue_management.memory_queue_management_system import MemoryQueueManagementSystem
 
-load_dotenv()
+load_dotenv(override=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -240,6 +243,55 @@ def orientation_stream(request: OrientationRequest):
     return StreamingResponse(generate(), media_type="text/event-stream")
 
 
+# ── VISION HELPER ────────────────────────────────────────────────
+
+_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+
+async def _extract_image_with_vision(content: bytes, ext: str) -> str:
+    """Send image to Groq vision model and return the extracted medical text."""
+    mime_map = {"png": "image/png", "webp": "image/webp", "jpg": "image/jpeg", "jpeg": "image/jpeg"}
+    mime = mime_map.get(ext, "image/jpeg")
+    b64 = _b64.b64encode(content).decode()
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+
+    payload = {
+        "model": _VISION_MODEL,
+        "temperature": 0.1,
+        "max_tokens": 1024,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime};base64,{b64}"},
+                    },
+                    {
+                        "type": "text",
+                        "text": (
+                            "This is a medical document (prescription or lab result). "
+                            "Extract ALL visible medical information: patient name, date, "
+                            "doctor name, test/exam names, measured values, normal reference ranges, "
+                            "medications, dosages, diagnoses, and any clinical notes. "
+                            "If a value is outside the reference range, mark it explicitly. "
+                            "Format the output clearly and concisely."
+                        ),
+                    },
+                ],
+            }
+        ],
+    }
+
+    async with _httpx.AsyncClient(verify=False, timeout=30) as client:
+        resp = await client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"].strip()
+
+
 # ── UPLOAD PDF / IMAGE ────────────────────────────────────────────
 
 @app.post("/api/orientation/upload-context", tags=["Orientation IA"])
@@ -267,22 +319,32 @@ async def upload_medical_context(
 
     if ext == "pdf":
         try:
-            import pypdf
-            reader = pypdf.PdfReader(io.BytesIO(content))
-            extracted_text = "\n".join(page.extract_text() or "" for page in reader.pages)
-            extracted_text = extracted_text[:3000].strip()
-        except ImportError:
-            raise HTTPException(status_code=500, detail="pypdf non installé. Ajoutez 'pypdf' aux dépendances.")
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(content))
+            raw_text = "\n".join(
+                page.extract_text() or "" for page in reader.pages
+            ).strip()
+            if raw_text:
+                extracted_text = raw_text[:3000]
+            else:
+                # Scanned PDF — try vision on first page if possible
+                try:
+                    extracted_text = await _extract_image_with_vision(content, "pdf")
+                except Exception:
+                    extracted_text = "[PDF scanné — texte non extractible automatiquement. Le patient a joint une ordonnance ou un résultat d'analyse en PDF.]"
         except Exception as e:
             raise HTTPException(status_code=422, detail=f"Impossible de lire le PDF : {e}")
 
-    elif ext in ("png", "jpg", "jpeg"):
-        import base64
-        b64 = base64.b64encode(content).decode()
-        extracted_text = f"[IMAGE_MEDICALE:base64:{b64[:200]}...]"
+    elif ext in ("png", "jpg", "jpeg", "webp"):
+        try:
+            extracted_text = await _extract_image_with_vision(content, ext)
+        except Exception as e:
+            logger.warning(f"Vision extraction failed for {filename}: {e}")
+            # Fallback: acknowledge the upload without crashing
+            extracted_text = f"[Image médicale jointe par le patient : {filename}. Le contenu exact n'a pas pu être extrait automatiquement. Demandez au patient de décrire les informations importantes de son document.]"
 
     else:
-        raise HTTPException(status_code=415, detail=f"Format non supporté : .{ext}. Utilisez PDF, PNG ou JPG.")
+        raise HTTPException(status_code=415, detail=f"Format non supporté : .{ext}. Utilisez PDF, PNG, JPG ou WebP.")
 
     if not extracted_text:
         raise HTTPException(status_code=422, detail="Impossible d'extraire du texte de ce fichier.")

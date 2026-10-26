@@ -15,14 +15,17 @@ import { DoctorDashboard } from './doctor-dashboard/doctor-dashboard';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { LabtechDashboard } from './labtech-dashboard/labtech-dashboard';
 
-import { authGuard } from './shared/guards/auth.guard';
+import { authGuard }   from './shared/guards/auth.guard';
+import { noAuthGuard } from './shared/guards/no-auth.guard';
 
 export const routes: Routes = [
 
-  // Public routes — no guard needed
-  { path: '',         component: Home },
-  { path: 'login',    component: LoginComponent },
-  { path: 'register', component: Register },
+  // Public routes
+  { path: '', component: Home },
+
+  // Auth pages — redirect to dashboard if already logged in
+  { path: 'login',    component: LoginComponent, canActivate: [noAuthGuard] },
+  { path: 'register', component: Register,        canActivate: [noAuthGuard] },
 
   // Protected routes — require login
   {

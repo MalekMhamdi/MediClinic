@@ -89,7 +89,7 @@
         <!-- Filter chips -->
         <div class="dr-filters">
           @for (f of [['all','All'],['Pending','Pending'],['Confirmed','Confirmed'],['Completed','Completed'],['Refused','Refused']]; track f[0]) {
-            <button class="dr-chip" [class.active]="apptFilter() === f[0]" (click)="apptFilter.set($any(f[0]))">
+            <button class="dr-chip" [class.active]="apptFilter() === f[0]" (click)="setApptFilter($any(f[0]))">
               {{ f[1] }}
               @if (f[0] !== 'all') {
                 <span>({{ appointments().filter(a => a.status === f[0]).length }})</span>
@@ -106,7 +106,7 @@
           <div class="dr-empty">📭 No appointments in this category.</div>
         } @else {
           <div class="dr-appt-list">
-            @for (appt of filtered(); track appt.id) {
+            @for (appt of pagedAppts(); track appt.id) {
               <div class="dr-appt-card" [class]="'border-' + statusClass(appt.status)">
 
                 <div class="dr-appt-date-col">
@@ -147,6 +147,12 @@
               </div>
             }
           </div>
+          <app-pagination
+            [total]="filtered().length"
+            [pageSize]="APPT_PAGE_SIZE"
+            [page]="apptPage()"
+            (pageChange)="apptPage.set($event)">
+          </app-pagination>
         }
       }
 
@@ -218,12 +224,26 @@
         <div class="dr-patients">
 
           @if (!selectedPatientId()) {
+            <!-- Patient search -->
+            <div class="dr-search-bar">
+              <span class="dr-search-icon">🔍</span>
+              <input class="dr-search-input" placeholder="Search patient by name…"
+                [value]="patientSearch()"
+                (input)="setPatientSearch($any($event.target).value)" />
+              @if (patientSearch()) {
+                <button class="dr-search-clear" (click)="setPatientSearch('')">✕</button>
+              }
+              <span class="dr-search-count">{{ filteredPatients().length }} patient(s)</span>
+            </div>
+
             <!-- Patient list -->
             @if (uniquePatients.length === 0) {
               <div class="dr-empty">No patients yet.</div>
+            } @else if (filteredPatients().length === 0) {
+              <div class="dr-empty">No patient matches "{{ patientSearch() }}"</div>
             } @else {
               <div class="dr-patient-grid">
-                @for (p of uniquePatients; track p.id) {
+                @for (p of pagedPatients(); track p.id) {
                   <div class="dr-patient-card" (click)="openPatientHistory(p.id, p.name)">
                     <div class="dr-pat-avatar">{{ p.name.split(' ')[0][0] }}{{ p.name.split(' ')[1]?.[0] ?? '' }}</div>
                     <div class="dr-pat-info">
@@ -234,6 +254,12 @@
                   </div>
                 }
               </div>
+              <app-pagination
+                [total]="filteredPatients().length"
+                [pageSize]="PATIENT_PAGE_SIZE"
+                [page]="patientPage()"
+                (pageChange)="patientPage.set($event)">
+              </app-pagination>
             }
           } @else {
             <!-- En-tête patient (toujours visible) -->
@@ -326,6 +352,7 @@
                   <span class="dr-lab-date">{{ r.createdAt | date:'dd MMM yyyy' }}</span>
                   <span style="display:flex;gap:6px;align-items:center">
                     <button class="dr-btn-comment" (click)="openComment(r)">💬 Comment</button>
+                    <button class="dr-btn-dl-lab" title="Download PDF" (click)="downloadLabResult(r)">⬇ PDF</button>
                     <button class="dr-notif-delete" title="Delete result" (click)="deleteLabResult(r.id)">×</button>
                   </span>
                 </div>
@@ -452,7 +479,14 @@
               <div class="dr-form-card">
                 <div class="dr-section-header">
                   <span>💊 Prescriptions ({{ consultation()!.prescriptions.length }})</span>
-                  <button class="dr-btn-add" (click)="showRxForm.update(v=>!v)">+ Add</button>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    @if (consultation()!.prescriptions.length > 0) {
+                      <button class="dr-btn-print-rx" (click)="openPrescription()" title="Generate printable prescription">
+                        🖨️ Print Prescription
+                      </button>
+                    }
+                    <button class="dr-btn-add" (click)="showRxForm.update(v=>!v)">+ Add</button>
+                  </div>
                 </div>
                 @if (showRxForm()) {
                   <div class="dr-inline-form">
@@ -515,3 +549,11 @@
 
 <!-- ── Chat flottant SignalR ───────────────────────────── -->
 <app-chat-popup />
+
+<!-- ── Prescription print overlay ────────────────────── -->
+@if (showPrescription() && prescriptionData()) {
+  <app-prescription-print
+    [data]="prescriptionData()!"
+    (close)="showPrescription.set(false)">
+  </app-prescription-print>
+}

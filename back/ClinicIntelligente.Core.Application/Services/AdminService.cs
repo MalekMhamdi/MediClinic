@@ -38,6 +38,18 @@ public class AdminService(
             .OrderByDescending(s => s.Count)
             .ToList();
 
+        var byDoctor = appointments
+            .Where(a => a.Doctor != null)
+            .GroupBy(a => a.Doctor!)
+            .Select(g => new DoctorStatDto(
+                Doctor:        $"{g.Key.FirstName} {g.Key.LastName}",
+                Specialty:     g.Key.Specialty?.Name ?? "—",
+                Appointments:  g.Count(),
+                Consultations: g.Count(a => a.Consultation != null)
+            ))
+            .OrderByDescending(d => d.Appointments)
+            .ToList();
+
         return new AdminStatsDto(
             TotalPatients:        users.Count(u => u.Role == Role.Patient),
             TotalDoctors:         users.Count(u => u.Role == Role.Doctor),
@@ -49,8 +61,40 @@ public class AdminService(
             TotalConsultations:   consultations.Count,
             TotalLabOrders:       labOrders.Count,
             AppointmentsByMonth:  byMonth,
-            AppointmentsBySpecialty: bySpecialty
+            AppointmentsBySpecialty: bySpecialty,
+            AppointmentsByDoctor: byDoctor
         );
+    }
+
+    public async Task<IReadOnlyList<AdminAppointmentDto>> GetAllAppointmentsAsync(
+        string? status = null, string? specialty = null)
+    {
+        var appointments = await appointmentRepository.GetAllWithDetailsAsync();
+
+        if (!string.IsNullOrEmpty(status) &&
+            Enum.TryParse<AppointmentStatus>(status, ignoreCase: true, out var s))
+            appointments = appointments.Where(a => a.Status == s).ToList();
+
+        if (!string.IsNullOrEmpty(specialty))
+            appointments = appointments
+                .Where(a => a.Doctor?.Specialty?.Name
+                    .Contains(specialty, StringComparison.OrdinalIgnoreCase) == true)
+                .ToList();
+
+        return appointments
+            .OrderByDescending(a => a.DateTime)
+            .Select(a => new AdminAppointmentDto(
+                Id:              a.Id,
+                PatientName:     a.Patient is not null ? $"{a.Patient.FirstName} {a.Patient.LastName}" : "—",
+                DoctorName:      a.Doctor  is not null ? $"{a.Doctor.FirstName} {a.Doctor.LastName}" : "—",
+                DoctorSpecialty: a.Doctor?.Specialty?.Name ?? "—",
+                DateTime:        DateTime.SpecifyKind(a.DateTime, DateTimeKind.Utc),
+                Status:          a.Status.ToString(),
+                StatusLabel:     a.Status.ToString(),
+                HasConsultation: a.Consultation is not null,
+                Reason:          a.Reason
+            ))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<AdminUserDto>> GetAllUsersAsync()

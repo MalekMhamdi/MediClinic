@@ -11,6 +11,7 @@ public class Appointment : AuditableBaseEntity
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
     public string? Reason { get; set; }
     public string? Notes { get; set; }
+    public bool ReminderSent { get; set; } = false;
 
     public Patient? Patient { get; set; }
     public Doctor? Doctor { get; set; }

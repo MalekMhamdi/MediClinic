@@ -19,6 +19,13 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetStats()
         => Ok(await _service.GetStatsAsync());
 
+    /// <summary>[Admin] All appointments with optional status/specialty filter</summary>
+    [HttpGet("appointments")]
+    public async Task<IActionResult> GetAllAppointments(
+        [FromQuery] string? status = null,
+        [FromQuery] string? specialty = null)
+        => Ok(await _service.GetAllAppointmentsAsync(status, specialty));
+
     /// <summary>[Admin] Tous les utilisateurs avec leurs rôles</summary>
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsers()

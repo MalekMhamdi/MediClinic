@@ -108,11 +108,87 @@
   border-radius: 12px;
   flex-shrink: 0;
 }
-.apt-status.confirmed { background: var(--mint-light); color: var(--mint); }
-.apt-status.pending   { background: var(--amber-light); color: var(--amber); }
-.apt-status.cancelled { background: #fce8e8; color: var(--danger); }
+.apt-status.confirmed  { background: var(--mint-light); color: var(--mint); }
+.apt-status.pending    { background: var(--amber-light); color: var(--amber); }
+.apt-status.cancelled  { background: #fce8e8; color: var(--danger); }
+.apt-status.refused    { background: #fce8e8; color: var(--danger); }
+.apt-status.completed  { background: #e8f4fd; color: #2980b9; }
+
+.apt-date.green { background: linear-gradient(135deg, #1D9E75, #1a8a62); }
+
+.apt-reviewed-badge {
+  font-size: 11px; color: #f59e0b; font-weight: 600; margin-top: 5px;
+}
+
+.apt-btn-rate {
+  padding: 7px 13px; border-radius: 8px; border: none;
+  background: #fff8e1; color: #d97706;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.apt-btn-rate:hover { background: #d97706; color: white; }
 
 .apt-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── Review modal ─────────────────────────────────────────────── */
+.apt-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.apt-review-modal {
+  background: white; border-radius: 16px;
+  padding: 28px 32px; width: 420px; max-width: 100%;
+  box-shadow: 0 16px 48px rgba(0,0,0,.2);
+  display: flex; flex-direction: column; gap: 18px;
+}
+.apt-review-header { display: flex; gap: 14px; align-items: center; }
+.apt-review-doctor-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--navy); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.apt-review-doctor-name { font-size: 16px; font-weight: 700; color: var(--navy); }
+.apt-review-specialty   { font-size: 12px; color: var(--muted); }
+
+.apt-review-label { font-size: 14px; font-weight: 600; color: var(--text); }
+
+.apt-stars-row { display: flex; gap: 8px; }
+.apt-star {
+  font-size: 34px; cursor: pointer; color: #d1d5db;
+  transition: color .15s, transform .1s; user-select: none;
+}
+.apt-star:hover,
+.apt-star.filled { color: #f59e0b; transform: scale(1.1); }
+
+.apt-star-label { font-size: 13px; color: var(--muted); min-height: 20px; }
+
+.apt-review-comment {
+  width: 100%; box-sizing: border-box;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 10px 14px; font-size: 13px; font-family: inherit;
+  resize: none; outline: none; transition: border-color .2s;
+}
+.apt-review-comment:focus { border-color: var(--navy); }
+
+.apt-review-error {
+  font-size: 13px; color: var(--danger);
+  background: #fef2f2; border-radius: 8px; padding: 8px 12px;
+}
+
+.apt-review-actions {
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;
+}
+
+/* Success state */
+.apt-review-success {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 12px 0; text-align: center;
+}
+.apt-review-success-icon  { font-size: 48px; }
+.apt-review-success-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+.apt-review-success-sub   { font-size: 13px; color: var(--muted); }
 
 .apt-btn-outline {
   background: transparent;

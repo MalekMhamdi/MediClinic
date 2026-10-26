@@ -1,15 +1,16 @@
 import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PaginationComponent } from '../shared/pagination/pagination';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../shared/services/auth.service';
-import { AdminService, AdminStats, AdminUser } from '../shared/services/admin.service';
+import { AdminService, AdminStats, AdminUser, AdminAppointment } from '../shared/services/admin.service';
 
 const IA_API = 'http://localhost:8000';
 const IA_KEY = 'clinic-admin-2025';
 
-type Tab = 'stats' | 'users' | 'specialties' | 'profile' | 'ia-analytics';
+type Tab = 'stats' | 'users' | 'specialties' | 'profile' | 'ia-analytics' | 'appointments';
 
 interface IaStats {
   queue: {
@@ -45,7 +46,7 @@ interface IaQueueEntry {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })
@@ -83,6 +84,8 @@ export class AdminDashboard implements OnInit {
   // ── User filters ─────────────────────────────────────────────
   userSearch  = signal('');
   roleFilter  = signal('');
+  usersPage   = signal(1);
+  readonly USERS_PAGE_SIZE = 10;
 
   filteredUsers = computed(() => {
     let list = this.users();
@@ -93,6 +96,12 @@ export class AdminDashboard implements OnInit {
     );
     if (r) list = list.filter(u => u.role === r);
     return list;
+  });
+
+  pagedUsers = computed(() => {
+    const p  = this.usersPage();
+    const ps = this.USERS_PAGE_SIZE;
+    return this.filteredUsers().slice((p - 1) * ps, p * ps);
   });
 
   // ── Create user modal ────────────────────────────────────────
@@ -130,6 +139,34 @@ export class AdminDashboard implements OnInit {
   pwdOk = signal(''); pwdError = signal(''); savingPwd = signal(false);
 
   readonly roles = ['Patient', 'Doctor', 'LabTechnicien', 'Admin'];
+
+  // ── Appointments tab ──────────────────────────────────────────
+  appointments      = signal<AdminAppointment[]>([]);
+  apptStatusFilter  = signal('');
+  apptSpecialty     = signal('');
+  apptSearch        = signal('');
+  loadingAppts      = signal(false);
+  apptsPage         = signal(1);
+  readonly APPTS_PAGE_SIZE = 12;
+
+  filteredAppts = computed(() => {
+    let list = this.appointments();
+    const q  = this.apptSearch().toLowerCase();
+    const s  = this.apptStatusFilter();
+    const sp = this.apptSpecialty().toLowerCase();
+    if (q)  list = list.filter(a =>
+      a.patientName.toLowerCase().includes(q) ||
+      a.doctorName.toLowerCase().includes(q));
+    if (s)  list = list.filter(a => a.status === s);
+    if (sp) list = list.filter(a => a.doctorSpecialty.toLowerCase().includes(sp));
+    return list;
+  });
+
+  pagedAppts = computed(() => {
+    const p  = this.apptsPage();
+    const ps = this.APPTS_PAGE_SIZE;
+    return this.filteredAppts().slice((p - 1) * ps, p * ps);
+  });
 
   // ── IA Analytics ─────────────────────────────────────────────
   iaStats       = signal<IaStats | null>(null);
@@ -230,9 +267,32 @@ export class AdminDashboard implements OnInit {
 
   async setTab(t: Tab): Promise<void> {
     this.tab.set(t); this.error.set('');
-    if (t === 'users'        && this.users().length === 0)       await this.loadUsers();
-    if (t === 'specialties'  && this.specialties().length === 0) await this.loadSpecialties();
-    if (t === 'ia-analytics' && !this.iaStats())                 await this.loadIaAnalytics();
+    if (t === 'users'         && this.users().length === 0)       await this.loadUsers();
+    if (t === 'specialties'   && this.specialties().length === 0) await this.loadSpecialties();
+    if (t === 'ia-analytics'  && !this.iaStats())                 await this.loadIaAnalytics();
+    if (t === 'appointments'  && this.appointments().length === 0) await this.loadAppointments();
+  }
+
+  async loadAppointments(): Promise<void> {
+    this.loadingAppts.set(true);
+    try { this.appointments.set(await this.adminService.getAppointments()); }
+    catch { this.error.set('Failed to load appointments.'); }
+    finally { this.loadingAppts.set(false); }
+  }
+
+  async goToUsers(role: string): Promise<void> {
+    this.roleFilter.set(role);
+    this.userSearch.set('');
+    this.usersPage.set(1);
+    await this.setTab('users');
+  }
+
+  async goToAppointments(status = '', specialty = ''): Promise<void> {
+    this.apptStatusFilter.set(status);
+    this.apptSpecialty.set(specialty);
+    this.apptSearch.set('');
+    this.apptsPage.set(1);
+    await this.setTab('appointments');
   }
 
   // ── Toggle user ───────────────────────────────────────────────
@@ -447,6 +507,16 @@ export class AdminDashboard implements OnInit {
 
   formatDate(d: string): string {
     return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  apptStatusClass(s: string): string {
+    return { Pending: 'pending', Confirmed: 'confirmed', Completed: 'completed',
+             Cancelled: 'cancelled', Refused: 'cancelled' }[s] ?? '';
+  }
+
+  maxDoctorCount(): number {
+    const data = this.stats()?.appointmentsByDoctor ?? [];
+    return Math.max(...data.map(d => d.appointments), 1);
   }
 
   maxBarCount(): number {

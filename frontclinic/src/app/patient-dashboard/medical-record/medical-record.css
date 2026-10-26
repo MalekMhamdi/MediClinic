@@ -60,6 +60,14 @@
 .mr-doc-ref         { font-size: 12px; opacity: .6; margin-top: 3px; }
 .mr-doc-generated   { font-size: 10px; opacity: .45; margin-top: 2px; }
 
+.mr-action-btns { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.mr-download-btn {
+  padding: 8px 18px; border-radius: 8px; border: none;
+  background: rgba(255,255,255,.9); color: #0B2D5C;
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.mr-download-btn:hover:not(:disabled) { background: white; }
+.mr-download-btn:disabled { opacity: .6; cursor: not-allowed; }
 .mr-print-btn {
   padding: 8px 18px; border-radius: 8px;
   border: 1.5px solid rgba(255,255,255,.4);
@@ -445,6 +453,132 @@
   padding: 12px 16px;
   font-size: 12px; color: var(--amber); font-style: italic;
   background: #fffbf2; font-family: 'Segoe UI', sans-serif;
+}
+
+/* ── Filters zone (search + badges) ─────────────────────────── */
+.mr-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 24px 4px;
+}
+
+/* ── Doctor badge row ────────────────────────────────────────── */
+.mr-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.mr-doc-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(11,45,92,0.12);
+  background: white;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5a6e;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.mr-doc-badge:hover { border-color: #1D9E75; color: #1D9E75; background: #f0faf6; }
+.mr-doc-badge.active { background: #0B2D5C; color: white; border-color: #0B2D5C; }
+
+.mr-badge-spec {
+  font-size: 10px;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+/* ── Collapsible doctor header ───────────────────────────────── */
+.mr-doctor-header-clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.mr-doctor-header-clickable:hover { background: rgba(11,45,92,0.04); }
+
+.mr-collapse-btn {
+  font-size: 11px;
+  color: #6b7a92;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* ── Search bar ──────────────────────────────────────────────── */
+.mr-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 24px 4px;
+  background: white;
+  border: 1.5px solid rgba(11,45,92,0.12);
+  border-radius: 10px;
+  padding: 0 12px;
+  transition: border-color 0.2s;
+}
+.mr-search-bar:focus-within { border-color: #1D9E75; }
+.mr-search-bar.disabled { opacity: 0.45; pointer-events: none; }
+
+.mr-search-icon { font-size: 14px; color: #6b7a99; flex-shrink: 0; }
+
+.mr-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 10px 4px;
+  font-size: 13px;
+  font-family: inherit;
+  background: transparent;
+  color: #1a2332;
+}
+.mr-search-input::placeholder { color: #aab4cc; }
+
+.mr-search-clear {
+  background: none;
+  border: none;
+  color: #aab4cc;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.mr-search-clear:hover { color: #e24b4a; }
+
+/* ── Prescription action buttons ─────────────────────────────── */
+.mr-rx-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.mr-rx-dl-btn {
+  padding: 8px 16px;
+  background: #0B2D5C;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.mr-rx-dl-btn:hover:not(:disabled) { opacity: 0.85; }
+.mr-rx-dl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+
+/* ── Pagination info ─────────────────────────────────────────── */
+.mr-pagination-info {
+  font-size: 12px; color: #6b7a99;
+  padding: 8px 24px 0; text-align: right;
 }
 
 /* ── Pied de page ────────────────────────────────────────────── */

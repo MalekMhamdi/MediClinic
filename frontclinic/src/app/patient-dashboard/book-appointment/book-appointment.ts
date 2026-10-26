@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AppointmentService, Specialty, Doctor, TimeSlot } from '../../shared/services/appointment.service';
+import { PaginationComponent } from '../../shared/pagination/pagination';
 
 @Component({
   selector: 'app-book-appointment',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './book-appointment.html',
   styleUrl: './book-appointment.css'
 })
@@ -15,17 +16,23 @@ export class BookAppointmentComponent implements OnInit {
 
   step = signal<1 | 2 | 3>(1);
 
+  searchSp  = signal('');
+  searchDoc = signal('');
+  spPage    = signal(1);
+  readonly SP_PAGE_SIZE = 8;
+
   selectedSpecialty = signal<Specialty | null>(null);
   selectedDoctor    = signal<Doctor | null>(null);
   selectedDate      = signal<string>('');
   selectedTime      = signal<string>('');
   reason            = signal<string>('');
 
-  timeSlots = signal<TimeSlot[]>([]);
+  timeSlots    = signal<TimeSlot[]>([]);
   loadingSlots = signal(false);
-  loading  = signal(false);
-  error    = signal('');
-  success  = signal(false);
+  loading      = signal(false);
+  error        = signal('');
+  dateError    = signal('');
+  success      = signal(false);
 
   constructor(
     private appointmentService: AppointmentService,
@@ -67,18 +74,26 @@ export class BookAppointmentComponent implements OnInit {
   }
 
   get specialties(): Specialty[] {
-    return this.appointmentService.specialties();
+    const q = this.searchSp().toLowerCase().trim();
+    const all = this.appointmentService.specialties();
+    return q ? all.filter(s => s.name.toLowerCase().includes(q)) : all;
   }
 
+  pagedSpecialties = computed(() => {
+    const p  = this.spPage();
+    const ps = this.SP_PAGE_SIZE;
+    return this.specialties.slice((p - 1) * ps, p * ps);
+  });
+
   filteredDoctors = computed(() => {
-    const sp = this.selectedSpecialty();
-    return sp ? this.appointmentService.getDoctorsBySpecialty(sp.id) : [];
+    const sp  = this.selectedSpecialty();
+    const q   = this.searchDoc().toLowerCase().trim();
+    const docs = sp ? this.appointmentService.getDoctorsBySpecialty(sp.id) : [];
+    return q ? docs.filter(d => d.name.toLowerCase().includes(q)) : docs;
   });
 
   get minDate(): string {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   }
 
   get progressWidth(): string {
@@ -95,6 +110,7 @@ export class BookAppointmentComponent implements OnInit {
     this.selectedDate.set('');
     this.selectedTime.set('');
     this.timeSlots.set([]);
+    this.searchDoc.set('');
   }
 
   selectDoctor(doc: Doctor): void {
@@ -105,8 +121,21 @@ export class BookAppointmentComponent implements OnInit {
   }
 
   async setDate(val: string): Promise<void> {
-    this.selectedDate.set(val);
+    this.dateError.set('');
     this.selectedTime.set('');
+    this.timeSlots.set([]);
+
+    if (val) {
+      const [y, m, d] = val.split('-').map(Number);
+      const dow = new Date(y, m - 1, d).getDay(); // 0 = Sunday
+      if (dow === 0) {
+        this.dateError.set('The clinic is closed on Sundays. Please choose another day.');
+        this.selectedDate.set('');
+        return;
+      }
+    }
+
+    this.selectedDate.set(val);
     const doc = this.selectedDoctor();
     if (!doc || !val) return;
 

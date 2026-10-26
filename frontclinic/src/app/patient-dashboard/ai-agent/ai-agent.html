@@ -2,63 +2,128 @@
 
   <!-- ═══ IDLE / Welcome ═══ -->
   @if (isIdle()) {
-    <div class="ai-welcome">
-      <div class="ai-welcome-icon">
-        <div class="ai-brain-pulse">🧠</div>
+    <div class="ai-hero-layout">
+
+      <!-- ── LEFT PANEL ── -->
+      <div class="ai-hero-left">
+        <div class="ai-hero-brand">
+          <div class="ai-brain-pulse">🧠</div>
+          <div>
+            <h2 class="ai-hero-title">AI Medical Assistant</h2>
+            <p class="ai-hero-sub">Smart health guidance · Available 24/7</p>
+          </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="ai-section-label">How it works</div>
+        <div class="ai-steps-list">
+          <div class="ai-step-item">
+            <div class="ai-step-num">1</div>
+            <div>
+              <div class="ai-step-name">Describe your symptoms</div>
+              <div class="ai-step-desc">In French, Arabic, or English — just speak naturally</div>
+            </div>
+          </div>
+          <div class="ai-step-item">
+            <div class="ai-step-num">2</div>
+            <div>
+              <div class="ai-step-name">AI analyzes your case</div>
+              <div class="ai-step-desc">Evaluates urgency and finds the right specialty</div>
+            </div>
+          </div>
+          <div class="ai-step-item">
+            <div class="ai-step-num">3</div>
+            <div>
+              <div class="ai-step-name">Get oriented & book</div>
+              <div class="ai-step-desc">See the right specialist with a single click</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Common symptoms chips -->
+        <div class="ai-section-label" style="margin-top:20px">Common symptoms</div>
+        <div class="ai-chip-row">
+          @for (chip of quickChips; track chip.label) {
+            <button class="ai-chip" (click)="startSession()">
+              {{ chip.icon }} {{ chip.label }}
+            </button>
+          }
+        </div>
+
+        <!-- Capabilities -->
+        <div class="ai-caps">
+          <div class="ai-cap-item"><span class="ai-cap-check">✓</span> Multilingual — FR / AR / EN</div>
+          <div class="ai-cap-item"><span class="ai-cap-check">✓</span> PDF & image document analysis</div>
+          <div class="ai-cap-item"><span class="ai-cap-check">✓</span> Prescription explanation</div>
+          <div class="ai-cap-item"><span class="ai-cap-check">✓</span> Lab result interpretation</div>
+          <div class="ai-cap-item"><span class="ai-cap-check">✓</span> Urgency priority assessment</div>
+          <div class="ai-cap-item"><span class="ai-cap-check">✓</span> Instant appointment booking</div>
+        </div>
       </div>
-      <h2 class="ai-welcome-title">AI Medical Orientation</h2>
-      <p class="ai-welcome-sub">
-        Describe your symptoms in your own words.<br>
-        Our AI will identify the right specialist for you.
-      </p>
 
-      <div class="ai-features">
-        <div class="ai-feature-card">
-          <span class="ai-feature-icon">🩺</span>
-          <div class="ai-feature-text">
-            <div class="ai-feature-name">Symptom Analysis</div>
-            <div class="ai-feature-desc">Intelligent recognition</div>
-          </div>
-        </div>
-        <div class="ai-feature-card">
-          <span class="ai-feature-icon">🏥</span>
-          <div class="ai-feature-text">
-            <div class="ai-feature-name">Specialist Match</div>
-            <div class="ai-feature-desc">Right doctor for you</div>
-          </div>
-        </div>
-        <div class="ai-feature-card">
-          <span class="ai-feature-icon">⚡</span>
-          <div class="ai-feature-text">
-            <div class="ai-feature-name">Urgency Rating</div>
-            <div class="ai-feature-desc">Priority assessment</div>
-          </div>
-        </div>
-        <div class="ai-feature-card">
-          <span class="ai-feature-icon">📅</span>
-          <div class="ai-feature-text">
-            <div class="ai-feature-name">Book Instantly</div>
-            <div class="ai-feature-desc">Pre-filled appointment</div>
-          </div>
-        </div>
-      </div>
+      <!-- ── RIGHT PANEL ── -->
+      <div class="ai-hero-right">
 
-      <!-- Language picker -->
-      <div class="ai-lang-row">
-        <span class="ai-lang-label">Language :</span>
-        <button class="ai-lang-btn" [class.active]="language() === 'fr'" (click)="setLanguage('fr')">🇫🇷 Français</button>
-        <button class="ai-lang-btn" [class.active]="language() === 'ar'" (click)="setLanguage('ar')">🇹🇳 العربية</button>
-        <button class="ai-lang-btn" [class.active]="language() === 'en'" (click)="setLanguage('en')">🇬🇧 English</button>
-      </div>
+        <!-- Language picker -->
+        <div class="ai-lang-row">
+          <span class="ai-lang-label">Consultation language:</span>
+          <button class="ai-lang-btn" [class.active]="language() === 'fr'" (click)="setLanguage('fr')">🇫🇷 Français</button>
+          <button class="ai-lang-btn" [class.active]="language() === 'ar'" (click)="setLanguage('ar')">🇹🇳 عربية</button>
+          <button class="ai-lang-btn" [class.active]="language() === 'en'" (click)="setLanguage('en')">🇬🇧 English</button>
+        </div>
 
-      <button class="ai-start-btn" (click)="startSession()">
-        <span class="ai-start-icon">✨</span>
-        Start AI Consultation
-      </button>
+        <!-- Action card 1: Symptom consultation -->
+        <div class="ai-action-card ai-action-symptom">
+          <div class="ai-action-card-header">
+            <div class="ai-action-icon-wrap symptom-icon">🩺</div>
+            <div>
+              <div class="ai-action-title">Symptom Consultation</div>
+              <div class="ai-action-sub">AI-guided orientation</div>
+            </div>
+          </div>
+          <p class="ai-action-desc">
+            Describe what you feel and the AI will identify the right specialist,
+            assess urgency, and help you book an appointment.
+          </p>
+          <div class="ai-action-tags">
+            <span class="ai-tag">Specialist match</span>
+            <span class="ai-tag">Urgency rating</span>
+            <span class="ai-tag">Appointment</span>
+          </div>
+          <button class="ai-action-btn" (click)="startSession()">
+            Start Consultation →
+          </button>
+        </div>
 
-      <div class="ai-disclaimer">
-        ⚠ This tool provides orientation only — not a medical diagnosis.
-        Always consult a qualified physician.
+        <!-- Action card 2: Prescription / Lab analysis -->
+        <div class="ai-action-card ai-action-prescription">
+          <div class="ai-action-card-header">
+            <div class="ai-action-icon-wrap prescription-icon">📋</div>
+            <div>
+              <div class="ai-action-title">Prescription & Lab Analysis</div>
+              <div class="ai-action-sub">Document understanding</div>
+            </div>
+          </div>
+          <p class="ai-action-desc">
+            Upload your prescription or lab result (PDF, PNG, JPG, WebP) and
+            get a plain-language explanation of medications, dosages, and values.
+          </p>
+          <div class="ai-action-tags">
+            <span class="ai-tag blue">Prescription</span>
+            <span class="ai-tag blue">Lab results</span>
+            <span class="ai-tag blue">PDF / Image</span>
+          </div>
+          <button class="ai-action-btn prescription-btn" (click)="startPrescriptionMode()">
+            Upload & Analyze →
+          </button>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="ai-disclaimer">
+          ⚠ Orientation and document reading assistance only — not a substitute for medical diagnosis.
+          Always consult a qualified physician for treatment decisions.
+        </div>
+
       </div>
     </div>
   }
@@ -160,7 +225,7 @@
           #fileInput
           type="file"
           style="display:none"
-          accept=".pdf,.png,.jpg,.jpeg"
+          accept=".pdf,.png,.jpg,.jpeg,.webp"
           (change)="onFileSelected($event)" />
 
         <!-- Upload button -->
@@ -176,7 +241,7 @@
         <textarea
           class="ai-textarea"
           rows="1"
-          placeholder="Type your answer… or upload a lab result 📎"
+          placeholder="Type your answer… or upload a lab result / prescription 📎"
           [value]="userInput()"
           (input)="userInput.set($any($event.target).value)"
           (keydown)="onKeydown($event)"

@@ -10,7 +10,7 @@
 }
 
 @if (!loading() && !error() && record()) {
-<div class="mr-doc-wrapper">
+<div class="mr-doc-wrapper" id="mr-printable">
 
   <!-- ══ DOCUMENT HEADER ══════════════════════════════════════ -->
   <div class="mr-doc-header">
@@ -27,7 +27,12 @@
         <div class="mr-doc-ref">Ref. EMR-{{ record()!.patientId | number:'4.0-0' }}</div>
         <div class="mr-doc-generated">Generated on {{ today() }}</div>
       </div>
-      <button class="mr-print-btn no-print" (click)="print()">🖨 Print / PDF</button>
+      <div class="mr-action-btns no-print">
+        <button class="mr-download-btn" [disabled]="downloading()" (click)="downloadPdf()" title="Download full medical record as PDF">
+          {{ downloading() ? '⏳ Generating full record...' : '⬇ Download PDF' }}
+        </button>
+        <button class="mr-print-btn" (click)="print()">🖨 Print</button>
+      </div>
     </div>
 
     <!-- Patient identity -->
@@ -53,199 +58,278 @@
   </div>
 
   <!-- ══ EMPTY STATE ══════════════════════════════════════════ -->
-  @if (groupedByDoctor.length === 0) {
+  @if (flatConsultations().length === 0) {
     <div class="mr-empty-state">
       <div class="mr-empty-icon">📋</div>
       <div>No consultations recorded yet.</div>
-      <small>Your consultations, prescriptions and lab results will appear here after your doctor completes a visit.</small>
+      <small>Your consultations will appear here after your doctor completes a visit.</small>
     </div>
   }
 
-  <!-- ══ GROUPED BY DOCTOR ════════════════════════════════════ -->
-  @for (group of groupedByDoctor; track group.doctorName) {
+  @if (flatConsultations().length > 0) {
 
-    <div class="mr-doctor-section">
+    <!-- ══ SEARCH + BADGE FILTERS ══════════════════════════════ -->
+    <div class="mr-filters no-print">
 
-      <div class="mr-doctor-header">
-        <div class="mr-doctor-avatar">
-          {{ group.doctorName.charAt(0) }}{{ (group.doctorName.split(' ')[1] || '').charAt(0) }}
-        </div>
-        <div class="mr-doctor-info">
-          <div class="mr-doctor-name">Dr. {{ group.doctorName }}</div>
-          <div class="mr-doctor-spec">{{ group.specialty }}</div>
-        </div>
-        <div class="mr-doctor-stats-pills">
-          <span class="mr-dpill">{{ group.consultations.length }} consultation(s)</span>
-          <span class="mr-dpill green">{{ countGroupPrescriptions(group.consultations) }} prescription(s)</span>
-          <span class="mr-dpill purple">{{ countGroupLabOrders(group.consultations) }} lab test(s)</span>
-        </div>
+      <!-- Search bar -->
+      <div class="mr-search-bar" [class.disabled]="selectedDoctor()">
+        <span class="mr-search-icon">🔍</span>
+        <input
+          class="mr-search-input"
+          type="text"
+          placeholder="Search by doctor or specialty…"
+          [value]="searchQuery()"
+          [disabled]="!!selectedDoctor()"
+          (input)="searchQuery.set($any($event.target).value); mrPage.set(1)" />
+        @if (searchQuery()) {
+          <button class="mr-search-clear" (click)="searchQuery.set(''); mrPage.set(1)">✕</button>
+        }
       </div>
 
-      @for (entry of group.consultations; track entry.consultation.id; let ci = $index) {
+      <!-- Doctor quick-filter badges -->
+      @if (doctorBadges().length > 1) {
+        <div class="mr-badge-row">
+          <button class="mr-doc-badge" [class.active]="!selectedDoctor()" (click)="selectDoctor(null)">
+            All doctors
+          </button>
+          @for (b of doctorBadges(); track b.name) {
+            <button class="mr-doc-badge" [class.active]="selectedDoctor() === b.name" (click)="selectDoctor(b.name)">
+              {{ b.name.split(' ').slice(0,2).join(' ') }}
+              <span class="mr-badge-spec">{{ b.specialty }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
 
-        <div class="mr-consult-card">
+    <!-- ══ NO RESULTS ══════════════════════════════════════════ -->
+    @if (filteredGroups().length === 0) {
+      <div class="mr-empty-state no-print">
+        <div class="mr-empty-icon">🔍</div>
+        <div>No match for "{{ searchQuery() }}"</div>
+        <small>Try a different doctor name or specialty.</small>
+      </div>
+    }
 
-          <!-- Date / title bar -->
-          <div class="mr-consult-date-bar">
-            <div class="mr-visit-date-badge">
-              <div class="mr-visit-day">{{ entry.appointmentDate | date:'dd' }}</div>
-              <div class="mr-visit-mon">{{ entry.appointmentDate | date:'MMM yyyy' }}</div>
-            </div>
-            <div class="mr-consult-title-block">
-              <div class="mr-consult-title">Consultation #{{ ci + 1 }}</div>
-              <div class="mr-consult-meta">{{ formatDateTime(entry.appointmentDate) }}</div>
-              @if (entry.appointmentReason) {
-                <div class="mr-consult-reason">Reason: {{ entry.appointmentReason }}</div>
-              }
-            </div>
-            <span class="mr-consult-done-badge">✔ Consultation</span>
+    <!-- ══ PAGINATION INFO ══════════════════════════════════════ -->
+    @if (filteredGroups().length > MR_PAGE_SIZE && !fullView()) {
+      <div class="mr-pagination-info no-print">
+        Doctors {{ (mrPage()-1)*MR_PAGE_SIZE+1 }}–{{ minVal(mrPage()*MR_PAGE_SIZE, filteredGroups().length) }}
+        of {{ filteredGroups().length }}
+        @if (selectedDoctor() || searchQuery()) { · filtered }
+      </div>
+    }
+
+    <!-- ══ GROUPED BY DOCTOR ══════════════════════════════════ -->
+    @for (group of pagedGroups(); track group.doctorName) {
+      <div class="mr-doctor-section">
+
+        <!-- Doctor header — click to collapse -->
+        <div class="mr-doctor-header mr-doctor-header-clickable"
+             (click)="toggleCollapse(group.doctorName)">
+          <div class="mr-doctor-avatar">
+            {{ group.doctorName.charAt(0) }}{{ (group.doctorName.split(' ')[1] || '').charAt(0) }}
           </div>
+          <div class="mr-doctor-info">
+            <div class="mr-doctor-name">Dr. {{ group.doctorName }}</div>
+            <div class="mr-doctor-spec">{{ group.specialty }}</div>
+          </div>
+          <div class="mr-doctor-stats-pills">
+            <span class="mr-dpill">{{ group.consultations.length }} consultation(s)</span>
+            <span class="mr-dpill green">{{ countPrescriptions(group.consultations) }} Rx</span>
+            <span class="mr-dpill purple">{{ countLabOrders(group.consultations) }} lab test(s)</span>
+          </div>
+          <div class="mr-collapse-btn">{{ isCollapsed(group.doctorName) ? '▶' : '▼' }}</div>
+        </div>
 
-          <!-- Clinical Notes -->
-          @if (entry.consultation.diagnostic || entry.consultation.observations || entry.consultation.treatment) {
-            <div class="mr-clinical-notes">
-              <div class="mr-notes-title">📋 Clinical Report</div>
-              <div class="mr-notes-grid">
-                @if (entry.consultation.diagnostic) {
-                  <div class="mr-notes-block">
-                    <div class="mr-notes-label">DIAGNOSIS</div>
-                    <div class="mr-notes-text">{{ entry.consultation.diagnostic }}</div>
-                  </div>
-                }
-                @if (entry.consultation.observations) {
-                  <div class="mr-notes-block">
-                    <div class="mr-notes-label">CLINICAL OBSERVATIONS</div>
-                    <div class="mr-notes-text">{{ entry.consultation.observations }}</div>
-                  </div>
-                }
-                @if (entry.consultation.treatment) {
-                  <div class="mr-notes-block">
-                    <div class="mr-notes-label">TREATMENT PLAN</div>
-                    <div class="mr-notes-text">{{ entry.consultation.treatment }}</div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
+        <!-- Consultations (collapsible) -->
+        @if (!isCollapsed(group.doctorName)) {
+          @for (entry of group.consultations; track entry.consultation.id; let ci = $index) {
+            <div class="mr-consult-card">
 
-          <!-- ── PRESCRIPTION — Rx document format ─────────── -->
-          @if (entry.consultation.prescriptions.length > 0) {
-            <div class="mr-rx-doc">
-              <div class="mr-rx-doc-header">
-                <div class="mr-rx-doc-left">
-                  <div class="mr-rx-doc-clinic">MediClinic</div>
-                  <div class="mr-rx-doc-doctor">Dr. {{ group.doctorName }} · {{ group.specialty }}</div>
-                  <div class="mr-rx-doc-date">{{ formatDate(entry.appointmentDate) }}</div>
+              <!-- Date / title bar -->
+              <div class="mr-consult-date-bar">
+                <div class="mr-visit-date-badge">
+                  <div class="mr-visit-day">{{ entry.appointmentDate | date:'dd' }}</div>
+                  <div class="mr-visit-mon">{{ entry.appointmentDate | date:'MMM yyyy' }}</div>
                 </div>
-                <div class="mr-rx-stamp-big">Rx</div>
-              </div>
-              <div class="mr-rx-doc-patient">
-                Patient: <strong>{{ record()!.fullName }}</strong>
-                &nbsp;·&nbsp; DOB: {{ formatDate(record()!.dateOfBirth) }}
-                &nbsp;·&nbsp; Blood type: {{ record()!.bloodGroup || 'N/A' }}
-              </div>
-              <div class="mr-rx-doc-body">
-                @for (rx of entry.consultation.prescriptions; track rx.id; let ri = $index) {
-                  <div class="mr-rx-line">
-                    <span class="mr-rx-num">{{ ri + 1 }}.</span>
-                    <div class="mr-rx-content">
-                      <span class="mr-rx-name">{{ rx.medication }}</span>
-                      @if (rx.dosage) { <span class="mr-rx-dosage">{{ rx.dosage }}</span> }
-                      @if (rx.duration) { <span class="mr-rx-freq">— for {{ rx.duration }}</span> }
-                      @if (rx.instructions) {
-                        <div class="mr-rx-note-line">⚠ {{ rx.instructions }}</div>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-              <div class="mr-rx-doc-footer">
-                <div class="mr-rx-sig-line">
-                  <span>Doctor's signature &amp; stamp</span>
-                  <div class="mr-rx-sig-box"></div>
+                <div class="mr-consult-title-block">
+                  <div class="mr-consult-title">Consultation #{{ ci + 1 }}</div>
+                  <div class="mr-consult-meta">{{ formatDateTime(entry.appointmentDate) }}</div>
+                  @if (entry.appointmentReason) {
+                    <div class="mr-consult-reason">Reason: {{ entry.appointmentReason }}</div>
+                  }
                 </div>
-              </div>
-            </div>
-          }
-
-          <!-- ── LAB RESULTS ────────────────────────────────── -->
-          @if (entry.consultation.labOrders.length > 0) {
-            <div class="mr-lab-section">
-              <div class="mr-lab-section-title">
-                🔬 Lab Tests
-                <span class="mr-lab-count">
-                  {{ entry.consultation.labOrders.length }} ordered · {{ countResults(entry.consultation.labOrders) }} result(s) available
-                </span>
+                <span class="mr-consult-done-badge">✔ Consultation</span>
               </div>
 
-              @for (lo of entry.consultation.labOrders; track lo.id) {
-                <div class="mr-lab-item" [class.has-result]="lo.result !== null">
-
-                  <div class="mr-lab-item-header">
-                    <div class="mr-lab-item-left">
-                      <div class="mr-lab-status-dot" [class.done]="lo.result !== null"></div>
-                      <div>
-                        <div class="mr-lab-item-name">{{ lo.analysisType }}</div>
-                        @if (lo.notes) {
-                          <div class="mr-lab-item-note">Note: {{ lo.notes }}</div>
-                        }
+              <!-- Clinical Notes -->
+              @if (entry.consultation.diagnostic || entry.consultation.observations || entry.consultation.treatment) {
+                <div class="mr-clinical-notes">
+                  <div class="mr-notes-title">📋 Clinical Report</div>
+                  <div class="mr-notes-grid">
+                    @if (entry.consultation.diagnostic) {
+                      <div class="mr-notes-block">
+                        <div class="mr-notes-label">DIAGNOSIS</div>
+                        <div class="mr-notes-text">{{ entry.consultation.diagnostic }}</div>
                       </div>
-                    </div>
-                    @if (lo.result !== null) {
-                      <span class="mr-lab-badge done">✔ Result available</span>
-                    } @else {
-                      <span class="mr-lab-badge pending">⏳ Pending</span>
+                    }
+                    @if (entry.consultation.observations) {
+                      <div class="mr-notes-block">
+                        <div class="mr-notes-label">CLINICAL OBSERVATIONS</div>
+                        <div class="mr-notes-text">{{ entry.consultation.observations }}</div>
+                      </div>
+                    }
+                    @if (entry.consultation.treatment) {
+                      <div class="mr-notes-block">
+                        <div class="mr-notes-label">TREATMENT PLAN</div>
+                        <div class="mr-notes-text">{{ entry.consultation.treatment }}</div>
+                      </div>
                     }
                   </div>
-
-                  @if (lo.result !== null) {
-                    <div class="mr-lab-report">
-                      <div class="mr-lab-report-header">
-                        <div class="mr-lab-report-title-block">
-                          <div class="mr-lab-report-title">LABORATORY REPORT</div>
-                          <div class="mr-lab-report-type">{{ lo.analysisType }}</div>
-                        </div>
-                        <div class="mr-lab-report-meta">
-                          <div class="mr-lab-report-tech">Technician: <strong>{{ lo.result.technicienName }}</strong></div>
-                          <div class="mr-lab-report-date">{{ formatDate(lo.result.createdAt) }}</div>
-                          <div class="mr-lab-report-patient">Patient: {{ record()!.fullName }}</div>
-                        </div>
-                      </div>
-                      <div class="mr-lab-report-divider"></div>
-                      @if (lo.result.medicalComment) {
-                        <div class="mr-lab-report-body">
-                          <div class="mr-lab-report-section-label">MEDICAL INTERPRETATION</div>
-                          <div class="mr-lab-report-comment">{{ lo.result.medicalComment }}</div>
-                        </div>
-                      } @else {
-                        <div class="mr-lab-report-body">
-                          <em class="mr-lab-no-comment">No medical comment added yet.</em>
-                        </div>
-                      }
-                      @if (lo.result.resultPdfPath) {
-                        <div class="mr-lab-report-actions">
-                          <a class="mr-pdf-btn" [href]="lo.result.resultPdfPath" target="_blank">
-                            📎 Download Full PDF Report
-                          </a>
-                        </div>
-                      }
-                    </div>
-                  } @else {
-                    <div class="mr-lab-waiting">
-                      ⏳ Result not yet available — you will be notified when ready.
-                    </div>
-                  }
-
                 </div>
               }
-            </div>
+
+              <!-- ── PRESCRIPTION ───────────────────────────── -->
+              @if (entry.consultation.prescriptions.length > 0) {
+                <div class="mr-rx-doc">
+                  <div class="mr-rx-doc-header">
+                    <div class="mr-rx-doc-left">
+                      <div class="mr-rx-doc-clinic">MediClinic</div>
+                      <div class="mr-rx-doc-doctor">Dr. {{ group.doctorName }} · {{ group.specialty }}</div>
+                      <div class="mr-rx-doc-date">{{ formatDate(entry.appointmentDate) }}</div>
+                    </div>
+                    <div class="mr-rx-stamp-big">Rx</div>
+                  </div>
+                  <div class="mr-rx-doc-patient">
+                    Patient: <strong>{{ record()!.fullName }}</strong>
+                    &nbsp;·&nbsp; DOB: {{ formatDate(record()!.dateOfBirth) }}
+                    &nbsp;·&nbsp; Blood type: {{ record()!.bloodGroup || 'N/A' }}
+                  </div>
+                  <div class="mr-rx-doc-body">
+                    @for (rx of entry.consultation.prescriptions; track rx.id; let ri = $index) {
+                      <div class="mr-rx-line">
+                        <span class="mr-rx-num">{{ ri + 1 }}.</span>
+                        <div class="mr-rx-content">
+                          <span class="mr-rx-name">{{ rx.medication }}</span>
+                          @if (rx.dosage)       { <span class="mr-rx-dosage">{{ rx.dosage }}</span> }
+                          @if (rx.duration)     { <span class="mr-rx-freq">— for {{ rx.duration }}</span> }
+                          @if (rx.instructions) { <div class="mr-rx-note-line">⚠ {{ rx.instructions }}</div> }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  <div class="mr-rx-doc-footer">
+                    <div class="mr-rx-sig-line">
+                      <span>Doctor's signature &amp; stamp</span>
+                      <div class="mr-rx-sig-box"></div>
+                    </div>
+                    <div class="mr-rx-actions no-print">
+                      <button class="mr-rx-dl-btn"
+                        [disabled]="rxDownloading() === entry.consultation.id"
+                        (click)="downloadRx(toFlat(group, entry))">
+                        {{ rxDownloading() === entry.consultation.id ? '⏳ Generating…' : '⬇ Download Prescription PDF' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- ── LAB RESULTS ────────────────────────────── -->
+              @if (entry.consultation.labOrders.length > 0) {
+                <div class="mr-lab-section">
+                  <div class="mr-lab-section-title">
+                    🔬 Lab Tests
+                    <span class="mr-lab-count">
+                      {{ entry.consultation.labOrders.length }} ordered
+                      · {{ countResults(entry.consultation.labOrders) }} result(s)
+                    </span>
+                  </div>
+                  @for (lo of entry.consultation.labOrders; track lo.id) {
+                    <div class="mr-lab-item" [class.has-result]="lo.result !== null">
+                      <div class="mr-lab-item-header">
+                        <div class="mr-lab-item-left">
+                          <div class="mr-lab-status-dot" [class.done]="lo.result !== null"></div>
+                          <div>
+                            <div class="mr-lab-item-name">{{ lo.analysisType }}</div>
+                            @if (lo.notes) { <div class="mr-lab-item-note">Note: {{ lo.notes }}</div> }
+                          </div>
+                        </div>
+                        @if (lo.result !== null) {
+                          <span class="mr-lab-badge done">✔ Result available</span>
+                        } @else {
+                          <span class="mr-lab-badge pending">⏳ Pending</span>
+                        }
+                      </div>
+                      @if (lo.result !== null) {
+                        <div class="mr-lab-report">
+                          <div class="mr-lab-report-header">
+                            <div class="mr-lab-report-title-block">
+                              <div class="mr-lab-report-title">LABORATORY REPORT</div>
+                              <div class="mr-lab-report-type">{{ lo.analysisType }}</div>
+                            </div>
+                            <div class="mr-lab-report-meta">
+                              <div class="mr-lab-report-tech">Technician: <strong>{{ lo.result.technicienName }}</strong></div>
+                              <div class="mr-lab-report-date">{{ formatDate(lo.result.createdAt) }}</div>
+                              <div class="mr-lab-report-patient">Patient: {{ record()!.fullName }}</div>
+                            </div>
+                          </div>
+                          <div class="mr-lab-report-divider"></div>
+                          @if (lo.result.medicalComment) {
+                            <div class="mr-lab-report-body">
+                              <div class="mr-lab-report-section-label">MEDICAL INTERPRETATION</div>
+                              <div class="mr-lab-report-comment">{{ lo.result.medicalComment }}</div>
+                            </div>
+                          } @else {
+                            <div class="mr-lab-report-body">
+                              <em class="mr-lab-no-comment">No medical comment added yet.</em>
+                            </div>
+                          }
+                          @if (lo.result.resultPdfPath) {
+                            <div class="mr-lab-report-actions">
+                              <a class="mr-pdf-btn" [href]="lo.result.resultPdfPath" target="_blank">
+                                📎 Download Full PDF Report
+                              </a>
+                            </div>
+                          }
+                          <div class="mr-rx-actions no-print">
+                            <button class="mr-rx-dl-btn"
+                              [disabled]="labDownloading() === lo.id"
+                              (click)="downloadLabPdf(toFlat(group, entry), lo)">
+                              {{ labDownloading() === lo.id ? '⏳ Generating…' : '⬇ Download Lab Result PDF' }}
+                            </button>
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="mr-lab-waiting">
+                          ⏳ Result not yet available — you will be notified when ready.
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+            </div><!-- /mr-consult-card -->
           }
+        }
 
-        </div><!-- /mr-consult-card -->
+      </div><!-- /mr-doctor-section -->
+    }
 
-      }
-    </div><!-- /mr-doctor-section -->
-  }
+    <!-- ══ PAGINATION CONTROLS ════════════════════════════════ -->
+    @if (filteredGroups().length > MR_PAGE_SIZE && !fullView()) {
+      <div class="no-print" style="padding: 0 4px;">
+        <app-pagination
+          [total]="filteredGroups().length"
+          [pageSize]="MR_PAGE_SIZE"
+          [page]="mrPage()"
+          (pageChange)="mrPage.set($event)">
+        </app-pagination>
+      </div>
+    }
+
+  }<!-- /flatConsultations.length > 0 -->
 
   <!-- Footer -->
   <div class="mr-doc-footer">

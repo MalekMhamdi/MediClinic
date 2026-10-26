@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../shared/services/auth.service';
 import { ChatPopupComponent } from '../shared/chat-popup/chat-popup';
 import { MedicalRecordComponent } from '../patient-dashboard/medical-record/medical-record';
+import { PrescriptionPrintComponent, PrescriptionData } from './prescription-print/prescription-print';
+import { PdfService } from '../shared/services/pdf.service';
+import { PaginationComponent } from '../shared/pagination/pagination';
 import {
   DoctorService, AppointmentItem, ConsultationItem, DoctorLabResult,
   PatientMedicalRecord, MedicalConsultation, MedicalPrescription, MedicalLabOrder
@@ -23,7 +26,7 @@ interface DayPlan {
 @Component({
   selector: 'app-doctor-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ChatPopupComponent, MedicalRecordComponent],
+  imports: [CommonModule, FormsModule, ChatPopupComponent, MedicalRecordComponent, PrescriptionPrintComponent, PaginationComponent],
   templateUrl: './doctor-dashboard.html',
   styleUrl: './doctor-dashboard.css'
 })
@@ -37,11 +40,19 @@ export class DoctorDashboard implements OnInit {
   // ── Appointments ────────────────────────────────────────────
   appointments  = signal<AppointmentItem[]>([]);
   apptFilter    = signal<ApptFilter>('all');
+  apptPage      = signal(1);
+  readonly APPT_PAGE_SIZE = 8;
 
   filtered = computed(() => {
     const f = this.apptFilter();
     const all = this.appointments();
     return f === 'all' ? all : all.filter(a => a.status === f);
+  });
+
+  pagedAppts = computed(() => {
+    const p  = this.apptPage();
+    const ps = this.APPT_PAGE_SIZE;
+    return this.filtered().slice((p - 1) * ps, p * ps);
   });
 
   // ── Planning (calendar) ─────────────────────────────────────
@@ -53,6 +64,22 @@ export class DoctorDashboard implements OnInit {
   loadingPatient      = signal(false);
   selectedPatientId   = signal<number | null>(null);
   selectedPatientName = signal('');
+  patientSearch       = signal('');
+  patientPage         = signal(1);
+  readonly PATIENT_PAGE_SIZE = 8;
+
+  filteredPatients = computed(() => {
+    const q = this.patientSearch().toLowerCase().trim();
+    const list = q ? this.uniquePatients.filter(p => p.name.toLowerCase().includes(q))
+                   : this.uniquePatients;
+    return list;
+  });
+
+  pagedPatients = computed(() => {
+    const p  = this.patientPage();
+    const ps = this.PATIENT_PAGE_SIZE;
+    return this.filteredPatients().slice((p - 1) * ps, p * ps);
+  });
 
   // ── Dossier médical ─────────────────────────────────────────
   patientRecord        = signal<PatientMedicalRecord | null>(null);
@@ -114,10 +141,15 @@ export class DoctorDashboard implements OnInit {
   labNotes    = signal('');
   savingLab   = signal(false);
 
+  // ── Prescription print ───────────────────────────────────────
+  showPrescription  = signal(false);
+  prescriptionData  = signal<PrescriptionData | null>(null);
+
   constructor(
     public auth: AuthService,
     private doctorService: DoctorService,
-    private notifService: NotificationService
+    private notifService: NotificationService,
+    private pdfService: PdfService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -366,6 +398,21 @@ export class DoctorDashboard implements OnInit {
     }
   }
 
+  async downloadLabResult(r: DoctorLabResult): Promise<void> {
+    await this.pdfService.downloadLabResult(
+      {
+        patientName:    r.patientName,
+        analysisType:   r.analysisType,
+        technicienName: r.technicienName,
+        medicalComment: r.labComment,
+        status:         r.statusLabel,
+        createdAt:      r.createdAt,
+        doctorName:     this.auth.userName ?? undefined,
+      },
+      `LabResult_${r.patientName.replace(/\s+/g, '_')}_${r.analysisType.replace(/\s+/g, '_')}_${new Date(r.createdAt).toISOString().slice(0, 10)}.pdf`,
+    );
+  }
+
   async deleteLabResult(id: number): Promise<void> {
     if (!confirm('Delete this lab result? The order will return to Pending.')) return;
     try {
@@ -602,4 +649,31 @@ export class DoctorDashboard implements OnInit {
   }
 
   printPatientRecord(): void { window.print(); }
+
+  setApptFilter(f: ApptFilter): void { this.apptFilter.set(f); this.apptPage.set(1); }
+  setPatientSearch(q: string): void  { this.patientSearch.set(q); this.patientPage.set(1); }
+
+  openPrescription(): void {
+    const c    = this.consultation();
+    const appt = this.selectedAppt();
+    if (!c || !appt || !c.prescriptions?.length) return;
+
+    this.prescriptionData.set({
+      doctorName:      this.auth.userName ?? '',
+      doctorSpecialty: appt.doctorSpecialty ?? 'Médecine Générale',
+      clinicName:      'MediClinic',
+      clinicAddress:   'Tunis, Tunisie',
+      clinicPhone:     '+216 71 000 000',
+      patientName:     appt.patientFullName,
+      date:            new Date(appt.dateTime),
+      medications:     c.prescriptions.map(p => ({
+        medication: p.medication,
+        dosage:     p.dosage,
+        frequency:  p.frequency,
+        duration:   p.duration,
+        notes:      p.notes ?? null,
+      })),
+    });
+    this.showPrescription.set(true);
+  }
 }

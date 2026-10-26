@@ -76,5 +76,7 @@
 
 </div>
 
-<!-- ── Chat flottant SignalR ───────────────────────────── -->
-<app-chat-popup />
+<!-- ── Chat flottant SignalR (hidden on AI agent page) ── -->
+@if (!isAiRoute()) {
+  <app-chat-popup />
+}

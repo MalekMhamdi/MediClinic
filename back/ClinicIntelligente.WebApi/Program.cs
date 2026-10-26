@@ -4,6 +4,7 @@ using ClinicIntelligente.Infrastructure.Persistence.Contexts;
 using ClinicIntelligente.Infrastructure.Persistence.Seed;
 using ClinicIntelligente.WebApi.Hubs;
 using ClinicIntelligente.WebApi.Middlewares;
+using ClinicIntelligente.WebApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -62,6 +63,9 @@ builder.Services.AddCors(options =>
 
 // 3b. SignalR
 builder.Services.AddSignalR();
+
+// 3c. Daily J-1 reminder background service
+builder.Services.AddHostedService<ReminderBackgroundService>();
 
 // 4. Configure controllers and JSON options
 builder.Services.AddControllers()

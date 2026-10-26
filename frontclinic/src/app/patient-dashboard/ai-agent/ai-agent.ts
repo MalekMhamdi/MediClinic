@@ -17,6 +17,7 @@ type AiState = 'idle' | 'loading-session' | 'chatting' | 'typing' | 'complete' |
 export class AiAgentComponent implements AfterViewChecked {
 
   @ViewChild('messagesEnd') private messagesEnd!: ElementRef;
+  @ViewChild('fileInput') private fileInputRef!: ElementRef<HTMLInputElement>;
 
   // ── State ────────────────────────────────────────────────────────────
   state         = signal<AiState>('idle');
@@ -107,6 +108,20 @@ export class AiAgentComponent implements AfterViewChecked {
       this.state.set('error');
       this.errorMsg.set('Unable to connect to the AI service. Make sure the backend and AI agent are running.');
     }
+  }
+
+  // ── Prescription mode — start session then open file picker ─────────
+  async startPrescriptionMode(): Promise<void> {
+    await this.startSession();
+    // Wait until chatting state is reached before triggering the file picker
+    const waitForChat = () => new Promise<void>(resolve => {
+      const check = setInterval(() => {
+        if (this.state() === 'chatting') { clearInterval(check); resolve(); }
+      }, 100);
+      setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+    });
+    await waitForChat();
+    this.fileInputRef?.nativeElement?.click();
   }
 
   // ── Send ─────────────────────────────────────────────────────────────
@@ -277,6 +292,22 @@ export class AiAgentComponent implements AfterViewChecked {
   // Quick numeric replies for category selection
   numericOptions = ['1','2','3','4','5','6','7','8'];
 
+  // Common symptom chips shown on the idle screen (click = start session)
+  quickChips = [
+    { icon: '🤕', label: 'Headache' },
+    { icon: '🫀', label: 'Chest pain' },
+    { icon: '🤒', label: 'Fever' },
+    { icon: '🔙', label: 'Back pain' },
+    { icon: '🤢', label: 'Stomach pain' },
+    { icon: '😮‍💨', label: 'Shortness of breath' },
+    { icon: '😴', label: 'Fatigue' },
+    { icon: '💫', label: 'Dizziness' },
+    { icon: '🦴', label: 'Joint pain' },
+    { icon: '👁️', label: 'Eye pain' },
+    { icon: '🤧', label: 'Cough' },
+    { icon: '🩹', label: 'Skin rash' },
+  ];
+
   isAtCategoryStep = computed(() => {
     const msgs = this.messages();
     const last = msgs.at(-1);
@@ -291,8 +322,8 @@ export class AiAgentComponent implements AfterViewChecked {
     if (!file || !this.sessionId() || this.state() !== 'chatting') return;
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!['pdf', 'png', 'jpg', 'jpeg'].includes(ext)) {
-      this.errorMsg.set('Unsupported format. Use PDF, PNG or JPG.');
+    if (!['pdf', 'png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+      this.errorMsg.set('Unsupported format. Use PDF, PNG, JPG or WebP.');
       setTimeout(() => this.errorMsg.set(''), 4000);
       return;
     }
@@ -316,24 +347,24 @@ export class AiAgentComponent implements AfterViewChecked {
       const res = await this.ai.uploadContext(this.sessionId()!, file);
       this.uploadedFiles.update(list => [...list, { name: res.filename, chars: res.extractedChars }]);
 
-      // Replace the uploading placeholder with the actual upload confirmation
+      // Replace uploading placeholder with confirmed upload
       this.messages.update(msgs => [
         ...msgs.slice(0, -1),
         { role: 'user', content: `📎 ${res.filename}`, step: this.step() }
       ]);
-
-      // AI acknowledgement
-      this.messages.update(msgs => [
-        ...msgs,
-        {
-          role: 'assistant',
-          content: `I have received your document **${res.filename}** (${res.extractedChars} characters extracted). I will take it into account in my analysis. You can now describe your symptoms or ask me to analyze the document.`,
-          step: this.step()
-        }
-      ]);
       this._shouldScroll = true;
+
+      // Automatically ask AI to analyze and explain the document
+      const analyzePrompt = this.language() === 'ar'
+        ? 'حلل هذا المستند الطبي واشرح لي محتواه بالتفصيل حتى أتمكن من تطبيقه.'
+        : this.language() === 'en'
+          ? 'Please analyze this medical document and explain it to me in detail so I can follow it correctly.'
+          : 'Analyse ce document médical et explique-moi son contenu en détail pour que je puisse l\'appliquer correctement.';
+
+      await this._sendMessage(analyzePrompt);
+
     } catch {
-      this.messages.update(msgs => msgs.slice(0, -1)); // remove placeholder
+      this.messages.update(msgs => msgs.slice(0, -1));
       this.errorMsg.set('Failed to upload document. Please try again.');
       setTimeout(() => this.errorMsg.set(''), 4000);
     } finally {

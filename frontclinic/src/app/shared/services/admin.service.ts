@@ -16,6 +16,19 @@ export interface AdminStats {
   totalLabOrders:          number;
   appointmentsByMonth:     { month: string; count: number }[];
   appointmentsBySpecialty: { specialty: string; count: number }[];
+  appointmentsByDoctor:    { doctor: string; specialty: string; appointments: number; consultations: number }[];
+}
+
+export interface AdminAppointment {
+  id:              number;
+  patientName:     string;
+  doctorName:      string;
+  doctorSpecialty: string;
+  dateTime:        string;
+  status:          string;
+  statusLabel:     string;
+  hasConsultation: boolean;
+  reason:          string | null;
 }
 
 export interface AdminUser {
@@ -61,6 +74,16 @@ export class AdminService {
 
   async deleteUser(id: number): Promise<void> {
     await firstValueFrom(this.http.delete(`${API}/Admin/users/${id}`));
+  }
+
+  async getAppointments(status?: string, specialty?: string): Promise<AdminAppointment[]> {
+    let url = `${API}/Admin/appointments`;
+    const params: string[] = [];
+    if (status)    params.push(`status=${encodeURIComponent(status)}`);
+    if (specialty) params.push(`specialty=${encodeURIComponent(specialty)}`);
+    if (params.length) url += '?' + params.join('&');
+    const raw = await firstValueFrom(this.http.get<any[]>(url));
+    return raw.map(a => ({ ...a, dateTime: a.dateTime ?? a.DateTime }));
   }
 
   async getSpecialties(): Promise<any[]> {

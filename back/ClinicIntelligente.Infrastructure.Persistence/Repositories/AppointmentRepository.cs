@@ -36,6 +36,7 @@ public class AppointmentRepository : GenericRepository<Appointment>, IAppointmen
 
     public async Task<IReadOnlyList<Appointment>> GetAllWithDetailsAsync()
         => await _context.Appointments
+            .Include(a => a.Patient)
             .Include(a => a.Doctor).ThenInclude(d => d!.Specialty)
             .OrderByDescending(a => a.DateTime)
             .ToListAsync();

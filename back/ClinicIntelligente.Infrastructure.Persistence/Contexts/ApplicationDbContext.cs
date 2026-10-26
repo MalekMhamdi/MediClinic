@@ -20,6 +20,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<LabResult> LabResults { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<ChatMessage>  ChatMessages  { get; set; }
+    public DbSet<DoctorReview> DoctorReviews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -166,6 +167,31 @@ public class ApplicationDbContext : DbContext
 
         //  ONLY ONE FILTER (ROOT ENTITY)
         builder.Entity<User>().HasQueryFilter(u => u.IsActive);
+
+        // ─────────────── DOCTOR REVIEWS ───────────────
+        builder.Entity<DoctorReview>(e =>
+        {
+            e.HasOne(r => r.Doctor)
+             .WithMany()
+             .HasForeignKey(r => r.DoctorId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.Patient)
+             .WithMany()
+             .HasForeignKey(r => r.PatientId)
+             .OnDelete(DeleteBehavior.NoAction);
+
+            e.HasOne(r => r.Appointment)
+             .WithMany()
+             .HasForeignKey(r => r.AppointmentId)
+             .OnDelete(DeleteBehavior.NoAction);
+
+            // One review per completed appointment
+            e.HasIndex(r => r.AppointmentId).IsUnique();
+
+            e.Property(r => r.Rating).IsRequired();
+            e.Property(r => r.Comment).HasMaxLength(1000);
+        });
 
         // ─────────────── CHAT MESSAGES ───────────────
         builder.Entity<ChatMessage>(e =>

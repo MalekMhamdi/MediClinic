@@ -32,6 +32,12 @@
       <a class="ad-nav-item" [class.active]="tab() === 'specialties'" (click)="setTab('specialties')">
         <span>🏥</span> Specialties
       </a>
+      <a class="ad-nav-item" [class.active]="tab() === 'appointments'" (click)="setTab('appointments')">
+        <span>📅</span> Appointments
+        @if (stats()?.totalAppointments) {
+          <span class="ad-nav-count">{{ stats()!.totalAppointments }}</span>
+        }
+      </a>
       <a class="ad-nav-item" [class.active]="tab() === 'ia-analytics'" (click)="setTab('ia-analytics')">
         <span>🤖</span> IA Analytics
       </a>
@@ -56,6 +62,7 @@
           @else if (tab() === 'users')       { User Management }
           @else if (tab() === 'specialties') { Specialties }
           @else if (tab() === 'ia-analytics'){ AI Analytics — Medical Agent }
+          @else if (tab() === 'appointments'){ Appointments }
           @else                              { My Profile }
         </div>
         <div class="ad-topbar-sub">{{ today }}</div>
@@ -71,45 +78,53 @@
       @if (!loading() && tab() === 'stats' && stats()) {
 
         <div class="ad-kpi-grid">
-          <div class="ad-kpi blue">
+          <div class="ad-kpi blue ad-kpi-clickable" title="View all patients" (click)="goToUsers('Patient')">
             <div class="ad-kpi-icon">🧑‍⚕️</div>
             <div class="ad-kpi-num">{{ stats()!.totalPatients }}</div>
             <div class="ad-kpi-lbl">Patients</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi green">
+          <div class="ad-kpi green ad-kpi-clickable" title="View all doctors" (click)="goToUsers('Doctor')">
             <div class="ad-kpi-icon">👨‍⚕️</div>
             <div class="ad-kpi-num">{{ stats()!.totalDoctors }}</div>
             <div class="ad-kpi-lbl">Doctors</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi purple">
+          <div class="ad-kpi purple ad-kpi-clickable" title="View all lab technicians" (click)="goToUsers('LabTechnicien')">
             <div class="ad-kpi-icon">🔬</div>
             <div class="ad-kpi-num">{{ stats()!.totalLabTechs }}</div>
             <div class="ad-kpi-lbl">Lab Techs</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi navy">
+          <div class="ad-kpi navy ad-kpi-clickable" title="View all appointments" (click)="goToAppointments()">
             <div class="ad-kpi-icon">📅</div>
             <div class="ad-kpi-num">{{ stats()!.totalAppointments }}</div>
             <div class="ad-kpi-lbl">Appointments</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi amber">
+          <div class="ad-kpi amber ad-kpi-clickable" title="View pending appointments" (click)="goToAppointments('Pending')">
             <div class="ad-kpi-icon">⏳</div>
             <div class="ad-kpi-num">{{ stats()!.pendingAppointments }}</div>
             <div class="ad-kpi-lbl">Pending</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi red">
+          <div class="ad-kpi red ad-kpi-clickable" title="View cancelled appointments" (click)="goToAppointments('Cancelled')">
             <div class="ad-kpi-icon">❌</div>
             <div class="ad-kpi-num">{{ stats()!.cancellationRate }}%</div>
             <div class="ad-kpi-lbl">Cancellation Rate</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi teal">
+          <div class="ad-kpi teal ad-kpi-clickable" title="View consultations" (click)="goToAppointments('Completed')">
             <div class="ad-kpi-icon">📋</div>
             <div class="ad-kpi-num">{{ stats()!.totalConsultations }}</div>
             <div class="ad-kpi-lbl">Consultations</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
-          <div class="ad-kpi orange">
+          <div class="ad-kpi orange ad-kpi-clickable" title="View appointments with lab orders" (click)="goToAppointments()">
             <div class="ad-kpi-icon">🧪</div>
             <div class="ad-kpi-num">{{ stats()!.totalLabOrders }}</div>
             <div class="ad-kpi-lbl">Lab Orders</div>
+            <div class="ad-kpi-hint">→ View list</div>
           </div>
         </div>
 
@@ -132,10 +147,10 @@
 
           @if (stats()!.appointmentsBySpecialty.length > 0) {
             <div class="ad-chart-card">
-              <div class="ad-chart-title">🏥 By Specialty</div>
+              <div class="ad-chart-title">🏥 By Specialty <span class="ad-chart-hint">click to filter</span></div>
               <div class="ad-sp-chart">
                 @for (s of stats()!.appointmentsBySpecialty; track s.specialty) {
-                  <div class="ad-sp-row">
+                  <div class="ad-sp-row ad-sp-row-clickable" (click)="goToAppointments('', s.specialty)" title="View {{ s.specialty }} appointments">
                     <div class="ad-sp-name">{{ s.specialty }}</div>
                     <div class="ad-sp-bar-wrap">
                       <div class="ad-sp-bar" [style.width.%]="(s.count / maxBarCount()) * 100"></div>
@@ -143,6 +158,37 @@
                     <div class="ad-sp-count">{{ s.count }}</div>
                   </div>
                 }
+              </div>
+            </div>
+          }
+
+          @if (stats()!.appointmentsByDoctor && stats()!.appointmentsByDoctor.length > 0) {
+            <div class="ad-chart-card">
+              <div class="ad-chart-title">👨‍⚕️ By Doctor <span class="ad-chart-hint">click to filter</span></div>
+              <div class="ad-sp-chart">
+                @for (d of stats()!.appointmentsByDoctor; track d.doctor) {
+                  <div class="ad-sp-row ad-sp-row-clickable" (click)="goToAppointments('', d.specialty)" title="View Dr. {{ d.doctor }}'s appointments">
+                    <div class="ad-sp-name" style="width:140px">Dr. {{ d.doctor }}</div>
+                    <div class="ad-sp-bar-wrap">
+                      <div class="ad-sp-bar ad-sp-bar-doctor" [style.width.%]="(d.appointments / maxDoctorCount()) * 100"></div>
+                      @if (d.consultations > 0) {
+                        <div class="ad-sp-bar ad-sp-bar-consult"
+                          [style.width.%]="(d.consultations / maxDoctorCount()) * 100"
+                          title="{{ d.consultations }} consultations"></div>
+                      }
+                    </div>
+                    <div class="ad-sp-count">
+                      {{ d.appointments }}
+                      @if (d.consultations > 0) {
+                        <span class="ad-sp-consult-badge">{{ d.consultations }}✔</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="ad-chart-legend">
+                <span class="ad-legend-dot blue"></span> Appointments
+                <span class="ad-legend-dot green" style="margin-left:12px"></span> Consultations
               </div>
             </div>
           }
@@ -159,8 +205,8 @@
 
         <div class="ad-toolbar">
           <input class="ad-input" placeholder="Search name or email..."
-            [value]="userSearch()" (input)="userSearch.set($any($event.target).value)" />
-          <select class="ad-select" [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)">
+            [value]="userSearch()" (input)="userSearch.set($any($event.target).value); usersPage.set(1)" />
+          <select class="ad-select" [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value); usersPage.set(1)">
             <option value="">All roles</option>
             <option value="Patient">Patient</option>
             <option value="Doctor">Doctor</option>
@@ -182,7 +228,7 @@
           @if (filteredUsers().length === 0) {
             <div class="ad-empty">No users found.</div>
           }
-          @for (u of filteredUsers(); track u.id) {
+          @for (u of pagedUsers(); track u.id) {
             <div class="ad-trow">
               <span class="ad-cell-name">{{ u.fullName }}</span>
               <span class="ad-cell-email">{{ u.email }}</span>
@@ -204,6 +250,12 @@
             </div>
           }
         </div>
+        <app-pagination
+          [total]="filteredUsers().length"
+          [pageSize]="USERS_PAGE_SIZE"
+          [page]="usersPage()"
+          (pageChange)="usersPage.set($event)">
+        </app-pagination>
       }
 
       <!-- ════ SPECIALTIES ════ -->
@@ -242,6 +294,82 @@
             </div>
           }
         </div>
+      }
+
+      <!-- ════ APPOINTMENTS ════ -->
+      @if (!loading() && tab() === 'appointments') {
+
+        <div class="ad-toolbar">
+          <input class="ad-input" placeholder="Search patient or doctor..."
+            [value]="apptSearch()" (input)="apptSearch.set($any($event.target).value); apptsPage.set(1)" />
+          <select class="ad-select" [value]="apptStatusFilter()" (change)="apptStatusFilter.set($any($event.target).value); apptsPage.set(1)">
+            <option value="">All statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Refused">Refused</option>
+          </select>
+          <select class="ad-select" [value]="apptSpecialty()" (change)="apptSpecialty.set($any($event.target).value); apptsPage.set(1)">
+            <option value="">All specialties</option>
+            @for (s of stats()?.appointmentsBySpecialty ?? []; track s.specialty) {
+              <option [value]="s.specialty">{{ s.specialty }}</option>
+            }
+          </select>
+          <button class="ad-btn-outline" (click)="apptStatusFilter.set(''); apptSpecialty.set(''); apptSearch.set('')">
+            ✕ Clear
+          </button>
+          <span class="ad-toolbar-count">{{ filteredAppts().length }} result(s)</span>
+        </div>
+
+        @if (loadingAppts()) {
+          <div class="ad-empty">Loading appointments...</div>
+        } @else {
+          <div class="ad-table-wrap">
+            <div class="ad-appt-thead">
+              <span>Date</span>
+              <span>Patient</span>
+              <span>Doctor</span>
+              <span>Specialty</span>
+              <span>Reason</span>
+              <span>Status</span>
+              <span>Consultation</span>
+            </div>
+            @if (filteredAppts().length === 0) {
+              <div class="ad-empty">No appointments found.</div>
+            }
+            @for (a of pagedAppts(); track a.id) {
+              <div class="ad-appt-row">
+                <span class="ad-appt-date">
+                  <div class="ad-appt-day">{{ a.dateTime | date:'dd MMM' }}</div>
+                  <div class="ad-appt-time">{{ a.dateTime | date:'HH:mm' }}</div>
+                </span>
+                <span class="ad-cell-name">{{ a.patientName }}</span>
+                <span class="ad-cell-name">Dr. {{ a.doctorName }}</span>
+                <span><span class="ad-spec-pill">{{ a.doctorSpecialty }}</span></span>
+                <span class="ad-cell-reason">{{ a.reason || '—' }}</span>
+                <span>
+                  <span class="ad-status-pill ad-appt-status {{ apptStatusClass(a.status) }}">
+                    {{ a.statusLabel }}
+                  </span>
+                </span>
+                <span>
+                  @if (a.hasConsultation) {
+                    <span class="ad-consult-badge">✔ Done</span>
+                  } @else {
+                    <span class="ad-consult-empty">—</span>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+          <app-pagination
+            [total]="filteredAppts().length"
+            [pageSize]="APPTS_PAGE_SIZE"
+            [page]="apptsPage()"
+            (pageChange)="apptsPage.set($event)">
+          </app-pagination>
+        }
       }
 
       <!-- ════ IA ANALYTICS ════ -->

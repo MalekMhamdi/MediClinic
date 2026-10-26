@@ -57,7 +57,6 @@ public class NotificationService : INotificationService
     public async Task NotifyAppointmentBookedAsync(
         int appointmentId, int patientId, int doctorId, DateTime dateTime)
     {
-        // Doctor is notified
         await CreateAsync(new Notification
         {
             RecipientId = doctorId,

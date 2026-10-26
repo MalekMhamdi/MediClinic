@@ -30,6 +30,7 @@ public class PatientRepository : GenericRepository<Patient>, IPatientRepository
 
     public async Task<Patient?> GetWithFullMedicalRecordAsync(int patientId)
         => await _context.Patients
+            .IgnoreQueryFilters()   // bypass IsActive filter so doctors can read any patient record
             .Include(p => p.Appointments)
                 .ThenInclude(a => a.Doctor)
                     .ThenInclude(d => d!.Specialty)

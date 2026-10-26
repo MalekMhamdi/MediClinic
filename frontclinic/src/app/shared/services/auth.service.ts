@@ -51,7 +51,7 @@ export class AuthService {
 
   // ── Reactive state ────────────────────────────────────────────────────
   currentUser = signal<CurrentUser | null>(this._loadUser());
-  isLoggedIn  = signal<boolean>(!!localStorage.getItem(TOKEN_KEY));
+  isLoggedIn  = signal<boolean>(this.currentUser() !== null);
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -62,7 +62,8 @@ export class AuthService {
     );
     this._persist(res);
     const frontRole = ROLE_MAP[res.role] ?? 'patient';
-    this.router.navigate([ROLE_ROUTES[frontRole]]);
+    // replaceUrl removes /login from history so back button can't return to it
+    this.router.navigate([ROLE_ROUTES[frontRole]], { replaceUrl: true });
   }
 
   // ── Register patient (public) ─────────────────────────────────────────
@@ -76,7 +77,7 @@ export class AuthService {
       this.http.post<AuthResponse>(`${API}/Auth/register`, dto)
     );
     this._persist(res);
-    this.router.navigate(['/patient/profile']);
+    this.router.navigate(['/patient/profile'], { replaceUrl: true });
   }
 
   // ── Profile ────────────────────────────────────────────────────────────
@@ -141,7 +142,16 @@ export class AuthService {
   private _loadUser(): CurrentUser | null {
     try {
       const raw = localStorage.getItem(USER_KEY);
-      return raw ? JSON.parse(raw) as CurrentUser : null;
+      if (!raw) return null;
+      const user = JSON.parse(raw) as CurrentUser;
+      // Decode JWT and check expiration
+      const payload = JSON.parse(atob(user.token.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        return null;
+      }
+      return user;
     } catch { return null; }
   }
 }

@@ -41,8 +41,19 @@
 
       <!-- Specialties -->
       <div class="bk-section-title">Select a specialty</div>
+      <div class="bk-search-bar">
+        <span class="bk-search-icon">🔍</span>
+        <input class="bk-search-input" placeholder="Search specialty…"
+          [value]="searchSp()" (input)="searchSp.set($any($event.target).value); spPage.set(1)" />
+        @if (searchSp()) {
+          <button class="bk-search-clear" (click)="searchSp.set(''); spPage.set(1)">✕</button>
+        }
+      </div>
+      @if (specialties.length === 0 && searchSp()) {
+        <div class="bk-empty-small">No specialty matches "{{ searchSp() }}"</div>
+      }
       <div class="bk-specialties">
-        @for (sp of specialties; track sp.id) {
+        @for (sp of pagedSpecialties(); track sp.id) {
           <div class="bk-sp-card"
             [class.selected]="selectedSpecialty()?.id === sp.id"
             (click)="selectSpecialty(sp)">
@@ -52,6 +63,12 @@
           </div>
         }
       </div>
+      <app-pagination
+        [total]="specialties.length"
+        [pageSize]="SP_PAGE_SIZE"
+        [page]="spPage()"
+        (pageChange)="spPage.set($event)">
+      </app-pagination>
 
       <!-- Doctors -->
       @if (selectedSpecialty()) {
@@ -60,8 +77,20 @@
           <span class="bk-section-badge">{{ filteredDoctors().length }} available</span>
         </div>
 
+        <div class="bk-search-bar">
+          <span class="bk-search-icon">🔍</span>
+          <input class="bk-search-input" placeholder="Search doctor by name…"
+            [value]="searchDoc()" (input)="searchDoc.set($any($event.target).value)" />
+          @if (searchDoc()) {
+            <button class="bk-search-clear" (click)="searchDoc.set('')">✕</button>
+          }
+        </div>
+
         @if (filteredDoctors().length === 0) {
-          <div class="bk-empty">No doctors available for this specialty.</div>
+          <div class="bk-empty">
+            @if (searchDoc()) { No doctor matches "{{ searchDoc() }}" }
+            @else { No doctors available for this specialty. }
+          </div>
         }
 
         <div class="bk-doctors">
@@ -76,9 +105,18 @@
                 <div class="bk-doc-name">{{ doc.name }}</div>
                 <div class="bk-doc-title">{{ doc.title }} · {{ doc.experience }}</div>
                 <div class="bk-doc-rating">
-                  <span class="bk-stars">★★★★★</span>
-                  <span class="bk-rating-val">{{ doc.rating }}</span>
-                  <span class="bk-reviews">({{ doc.reviews }} reviews)</span>
+                  @if (doc.reviews > 0) {
+                    <span class="bk-stars">
+                      @for (s of [1,2,3,4,5]; track s) {
+                        <span [style.color]="s <= doc.rating ? '#f59e0b' : '#d1d5db'">★</span>
+                      }
+                    </span>
+                    <span class="bk-rating-val">{{ doc.rating | number:'1.1-1' }}</span>
+                    <span class="bk-reviews">({{ doc.reviews }} review{{ doc.reviews !== 1 ? 's' : '' }})</span>
+                  } @else {
+                    <span class="bk-stars" style="color:#d1d5db">★★★★★</span>
+                    <span class="bk-reviews">No reviews yet</span>
+                  }
                 </div>
                 <div class="bk-doc-days">
                   @for (day of doc.availableDays; track day) {
@@ -136,12 +174,16 @@
               [value]="selectedDate()"
               (input)="setDate($any($event.target).value)"
             />
+            @if (dateError()) {
+              <div class="bk-date-error">⚠ {{ dateError() }}</div>
+            }
             @if (selectedDate()) {
               <div class="bk-date-display">
                 📅 {{ selectedDate() | date:'EEEE, MMMM d, y' }}
               </div>
             }
           </div>
+          <div class="bk-closed-note">🚫 Sunday — clinic closed</div>
 
           <!-- Available days -->
           <div class="bk-avail-label">Doctor available on:</div>

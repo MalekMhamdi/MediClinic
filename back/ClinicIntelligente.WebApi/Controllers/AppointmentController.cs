@@ -45,12 +45,23 @@ public class AppointmentController(IAppointmentService service) : ControllerBase
         => Ok(await service.GetByDoctorIdAsync(doctorId, status));
 
     // ── GET AVAILABLE SLOTS ─────────────────────────────────────────
+    // patientId is optional — when provided slots already taken by that patient are also excluded
     [HttpGet("available-slots")]
     [AllowAnonymous]
     public async Task<IActionResult> GetAvailableSlots(
-        [FromQuery] int doctorId, [FromQuery] DateTime date)
+        [FromQuery] int doctorId,
+        [FromQuery] DateTime date,
+        [FromQuery] int? patientId = null)
     {
-        var slots = await service.GetAvailableSlotsAsync(doctorId, date);
+        // If the caller is authenticated and no explicit patientId supplied, use their id
+        int? resolvedPatientId = patientId;
+        if (!resolvedPatientId.HasValue && User.Identity?.IsAuthenticated == true)
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(claim, out var uid)) resolvedPatientId = uid;
+        }
+
+        var slots = await service.GetAvailableSlotsAsync(doctorId, date, resolvedPatientId);
         return Ok(slots);
     }
 

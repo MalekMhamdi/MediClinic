@@ -3,6 +3,7 @@ namespace ClinicIntelligente.Core.Application.Services;
 
 using AutoMapper;
 using ClinicIntelligente.Core.Application.DTOs.Appointment;
+using ClinicIntelligente.Core.Application.Email;
 using ClinicIntelligente.Core.Application.Interfaces.Repositories;
 using ClinicIntelligente.Core.Application.Interfaces.Services;
 using ClinicIntelligente.Core.Domain.Enums;
@@ -12,6 +13,7 @@ public class AppointmentService(
     IPatientRepository patientRepo,
     IDoctorRepository doctorRepo,
     INotificationService notificationService,
+    IEmailService emailService,
     IMapper mapper
 ) : IAppointmentService
 {
@@ -48,31 +50,43 @@ public class AppointmentService(
         return mapper.Map<IReadOnlyList<AppointmentDto>>(items);
     }
 
-    public async Task<IReadOnlyList<string>> GetAvailableSlotsAsync(int doctorId, DateTime date)
+    public async Task<IReadOnlyList<string>> GetAvailableSlotsAsync(
+        int doctorId, DateTime date, int? patientId = null)
     {
-        var doctorAppointments = await appointmentRepo.GetByDoctorIdAsync(doctorId);
-
-        // Seuls Pending et Confirmed bloquent un créneau.
-        // Completed/Cancelled/Refused libèrent le créneau pour de futures réservations.
-        var takenSlots = doctorAppointments
-            .Where(a =>
-            {
-                var local = ToLocal(a.DateTime);
-                return local.Date == date.Date
-                    && (a.Status == AppointmentStatus.Pending
-                        || a.Status == AppointmentStatus.Confirmed);
-            })
-            .Select(a => ToLocal(a.DateTime)
-                .ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
         var allSlots = new List<string>
         {
             "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
             "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM"
         };
 
-        return allSlots.Where(s => !takenSlots.Contains(s)).ToList();
+        // 1. Block slots already taken by ANY patient for this doctor (Pending/Confirmed)
+        var doctorAppts = await appointmentRepo.GetByDoctorIdAsync(doctorId);
+        var takenByDoctor = doctorAppts
+            .Where(a => ToLocal(a.DateTime).Date == date.Date
+                     && (a.Status == AppointmentStatus.Pending
+                      || a.Status == AppointmentStatus.Confirmed))
+            .Select(a => ToLocal(a.DateTime)
+                .ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // 2. Also block slots where THIS patient already has any active appointment
+        //    (even with a different doctor) — a patient can't be in two places at once
+        var takenByPatient = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (patientId.HasValue)
+        {
+            var patientAppts = await appointmentRepo.GetByPatientIdAsync(patientId.Value);
+            takenByPatient = patientAppts
+                .Where(a => ToLocal(a.DateTime).Date == date.Date
+                         && (a.Status == AppointmentStatus.Pending
+                          || a.Status == AppointmentStatus.Confirmed))
+                .Select(a => ToLocal(a.DateTime)
+                    .ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return allSlots
+            .Where(s => !takenByDoctor.Contains(s) && !takenByPatient.Contains(s))
+            .ToList();
     }
 
     // EF Core reads SQL Server datetimes as Kind=Unspecified even though they were stored as UTC.
@@ -95,15 +109,29 @@ public class AppointmentService(
         if (dto.DateTime <= DateTime.UtcNow)
             throw new InvalidOperationException("Appointment date must be in the future.");
 
-        // Hard guard: reject if the doctor already has a Pending or Confirmed appointment at exactly this time
-        var existingSlots = await appointmentRepo.GetByDoctorIdAsync(dto.DoctorId);
         var localRequested = ToLocal(dto.DateTime);
-        var conflict = existingSlots.Any(a =>
+
+        // Guard 0 — clinic is closed on Sundays
+        if (localRequested.DayOfWeek == DayOfWeek.Sunday)
+            throw new InvalidOperationException("The clinic is closed on Sundays. Please choose another day.");
+
+        // Guard 1 — doctor already has Pending/Confirmed at this exact time
+        var doctorSlots = await appointmentRepo.GetByDoctorIdAsync(dto.DoctorId);
+        var doctorConflict = doctorSlots.Any(a =>
             (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed)
             && Math.Abs((ToLocal(a.DateTime) - localRequested).TotalMinutes) < 1);
-        if (conflict)
+        if (doctorConflict)
             throw new InvalidOperationException(
-                $"The time slot {localRequested:hh:mm tt} on {localRequested:yyyy-MM-dd} is already taken for this doctor.");
+                $"The slot {localRequested:hh:mm tt} on {localRequested:yyyy-MM-dd} is already booked for this doctor.");
+
+        // Guard 2 — same patient already has an active appointment at this exact time (any doctor)
+        var patientSlots = await appointmentRepo.GetByPatientIdAsync(dto.PatientId);
+        var patientConflict = patientSlots.Any(a =>
+            (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed)
+            && Math.Abs((ToLocal(a.DateTime) - localRequested).TotalMinutes) < 1);
+        if (patientConflict)
+            throw new InvalidOperationException(
+                $"You already have an appointment at {localRequested:hh:mm tt} on {localRequested:yyyy-MM-dd}. Please choose a different time slot.");
 
         var appointment = mapper.Map<Domain.Entities.Appointment>(dto);
         appointment.Status = AppointmentStatus.Pending;
@@ -139,6 +167,31 @@ public class AppointmentService(
             appt.PatientId,
             $"Dr. {doctor.FirstName} {doctor.LastName}",
             appt.DateTime);
+
+        // Send immediate reminder if appointment is within 24h and not already sent
+        var localAppt  = ToLocal(appt.DateTime);
+        var hoursUntil = (localAppt - DateTime.Now).TotalHours;
+        if (hoursUntil is > 0 and <= 24 && !appt.ReminderSent)
+        {
+            appt.ReminderSent = true;
+            await appointmentRepo.UpdateAsync(appt);
+
+            await notificationService.NotifyAppointmentReminderAsync(
+                appt.Id, appt.PatientId, appt.DateTime);
+
+            var patient = await patientRepo.GetByIdAsync(appt.PatientId);
+            if (patient is not null)
+            {
+                var patientName = $"{patient.FirstName} {patient.LastName}";
+                var doctorName  = $"Dr. {doctor.FirstName} {doctor.LastName}";
+
+                await emailService.SendAsync(
+                    toEmail:  patient.Email,
+                    toName:   patientName,
+                    subject:  $"[MediClinic] Rappel : Rendez-vous aujourd'hui à {localAppt:HH:mm}",
+                    htmlBody: EmailTemplates.Reminder(patientName, localAppt, doctorName, ""));
+            }
+        }
     }
 
     public async Task RefuseAsync(int id, int doctorId)
@@ -190,6 +243,7 @@ public class AppointmentService(
         appt.DateTime = newDateTime;
         appt.Reason = reason;
         appt.Status = AppointmentStatus.Pending;
+        appt.ReminderSent = false;
         appt.LastModifiedAt = DateTime.UtcNow;
         await appointmentRepo.UpdateAsync(appt);
 
@@ -232,16 +286,36 @@ public class AppointmentService(
     {
         var target = targetDate.Date;
 
-        var allAppointments = await appointmentRepo.GetAllAsync();
-        var toRemind = allAppointments.Where(a =>
-            ToLocal(a.DateTime).Date == target &&          // comparaison en heure locale
-            (a.Status == AppointmentStatus.Confirmed ||
-             a.Status == AppointmentStatus.Pending));
+        var all = await appointmentRepo.GetAllWithDetailsAsync();
+        var toRemind = all.Where(a =>
+            ToLocal(a.DateTime).Date == target
+            && !a.ReminderSent
+            && (a.Status == AppointmentStatus.Confirmed
+             || a.Status == AppointmentStatus.Pending));
 
         foreach (var appt in toRemind)
         {
+            appt.ReminderSent = true;
+            await appointmentRepo.UpdateAsync(appt);
+
             await notificationService.NotifyAppointmentReminderAsync(
                 appt.Id, appt.PatientId, appt.DateTime);
+
+            if (appt.Patient is not null)
+            {
+                var patientName = $"{appt.Patient.FirstName} {appt.Patient.LastName}";
+                var doctorName  = appt.Doctor is not null
+                    ? $"{appt.Doctor.FirstName} {appt.Doctor.LastName}"
+                    : "votre médecin";
+                var specialty   = appt.Doctor?.Specialty?.Name ?? "";
+                var localDt     = ToLocal(appt.DateTime);
+
+                await emailService.SendAsync(
+                    toEmail:  appt.Patient.Email,
+                    toName:   patientName,
+                    subject:  $"[MediClinic] Rappel : Rendez-vous demain à {localDt:HH:mm}",
+                    htmlBody: EmailTemplates.Reminder(patientName, localDt, doctorName, specialty));
+            }
         }
     }
 }

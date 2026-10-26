@@ -25,6 +25,7 @@ public record RegisterPatientDto(
 public record UpdateProfileDto(
     [Required] string FirstName,
     [Required] string LastName,
+    [EmailAddress] string? Email,
     string? Phone,
     string? BloodGroup,
     string? Address,
